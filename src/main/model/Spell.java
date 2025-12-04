@@ -134,7 +134,7 @@ public class Spell {
         String tempString, tempString2;
         int endIndex;
         tempString = spell.substring(Controller.ordinalIndexOf(spell, ",", index));
-        tempString2 = tempString.substring(1,40);
+        tempString2 = tempString.substring(1,60);
         endIndex = tempString2.indexOf(",");
         return tempString2.substring(0, endIndex);
     }
@@ -637,4 +637,5 @@ public class Spell {
 
         return result;
     }
+
 }
