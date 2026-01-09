@@ -1370,7 +1370,6 @@ public class CharacterSheet {
         this.primarySkillCap = getWeaponSkill(primary.getWeaponType());
         if (primarySkillCap > 252)
             primarySkillCap = 252;
-        System.out.println("psc: " + primarySkillCap);
     }
 
     /**
@@ -1388,7 +1387,6 @@ public class CharacterSheet {
         this.secondarySkillCap = getWeaponSkill(secondary.getWeaponType());
         if (secondarySkillCap > 252)
             secondarySkillCap = 252;
-        System.out.println("ssc: " + secondarySkillCap);
     }
 
     /**
@@ -1785,3 +1783,4 @@ public class CharacterSheet {
         }
     }
 }
+
