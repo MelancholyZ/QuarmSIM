@@ -30,17 +30,21 @@ public class Controller {
     private int ambidexterity;
     private int combatFury;
     private int flurry;
-    private static int spellCastingFury;
+    private static int spellCastingFury, punishOrKnightExtraAttack = 0;
     private int arrowDamage, arrowElementalDamage, arrowElementalType, haste;
     private double archeryMultipliers, archeryMod, backstabMod;
+    private static double piercingMod;
     private static int primaryHastedDelay, secondaryHastedDelay, specialHastedDelay, rangedHastedDelay;
     private static int primaryDamage = 0, secondaryDamage = 0, rangedDamage = 0, specialDamage = 0;
     private static int primaryProcDamage = 0, secondaryProcDamage = 0, rangedProcDamage = 0;
     private static int primaryDotDamage = 0, secondaryDotDamage = 0, rangedDotDamage = 0;
     private static int primaryDotTics = 0, secondaryDotTics = 0, rangedDotTics = 0, discipline = 0;
     private static long startPrimaryDotTimer = -1, startSecondaryDotTimer = -1, startRangedDotTimer = -1;
-    private static long discStartTimer = 0;
-    private static boolean fullCombatTextToFile, reportToConsole, windOfTash, malo;
+    private static long discStartTimer = 0, timeToParse;
+    private static long spellCastingOffsetPrimary = 0, spellCastingOffsetSecondary = 0;
+    private static long spellCastingOffsetSpecial = 0, spellCastingOffsetRanged = 0;
+    private static long reactionTimePlusPing = 0;
+    private static boolean fullCombatTextToFile, reportToConsole, windOfTash, malo, manaRatioEqualToBossHP;
     private static String fileToWriteTo;
 
 
@@ -60,16 +64,14 @@ public class Controller {
         int stats = 255, level = 60;
         setExpansion("PlanesEQ");
         setDb(fh.readFromFile("resources/quarm_shortdb.sql"));
-        setFileToWriteTo("resources/eqlog_Soandso_War_VulakAxeVsAoW.txt");
-        fh.clearFile(fileToWriteTo);
-
-
-        setEpic(false); // True raises attack for classes that have attack on epic
-        setOwl(false); // Used for reducing ranger worn attack by 10 due to using owl mask for 4% archery mod
+        setTimeToParse(36000000); // 300000 milliseconds is 5 minutes, 36000000 milliseconds is 10 hours
+        setReactionTimePlusPing(150); // In milliseconds and you (probably) aren't Faker
+        setEpic(true); // True raises attack for classes that have attack on epic
+        setOwl(false); // Reduces ranger worn attack by 10 due to using owl mask for 4% archery mod
         setBard(true); // Attack songs + epic
         setBeastlord(true); // Savagery
         setAncientAvatar(true); // +25 attack over avatar
-        setClass("Warrior");
+        setClass("Rogue");
         setPlayerName("Soandso");
         setDiscipline(1059); //Fellstrike = Bestialrage = Innerflame = Duelist = 1059, Trueshot = 1067, Holyforge = 1065
         setAttackLevels();
@@ -77,41 +79,77 @@ public class Controller {
         setReportToConsole(false);
         setWindOfTash(true);
         setMalo(true);
+        setManaRatioEqualToBossHP(true);
 
         // setCustomAC(i);
         // setCustomResists(i);
 
         //primary, secondary, ranged, specialAttack
+        //setWeaponsAndSpecial("Staff of Transcendence", "none", "none", "none");
+        //setWeaponsAndSpecial("Caen\\'s Bo Staff of Fury", "none", "none", "none");
+        //setWeaponsAndSpecial("Gharn\\'s Rock of Smashing", "Fist of Nature", "none", "none");
+        //setWeaponsAndSpecial("Bo Staff of Transcendence", "none", "none", "none");
+        //setWeaponsAndSpecial("Staff of the Silent Star", "none", "none", "none");
         // Monk: Gharn\\'s Rock of Smashing, Fist of Nature, Primal Velium Fist Wraps, Sceptre of Destruction, FlyingKick
-        // Ranger: Bow of the Destroyer, Primal Velium Reinforced Bow, Bow of Storms,
+        // Ranger: Bow of the Destroyer, Primal Velium Reinforced Bow, Bow of Storms
         // Rogue: Mrylokar\\'s Dagger of Vengeance, Massive Heartwood Thorn, Backstab
-        //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Vyemm\\'s Fang", "none", "Backstab");
+        setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Tor Vignus", "none", "Backstab");
         //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Massive Heartwood Thorn", "none", "Backstab");
         //setWeaponsAndSpecial("Salindrite Dagger", "Ragebringer", "none", "Backstab");
         //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Ragebringer", "none", "Backstab");
-        setWeaponsAndSpecial("Palladius\\' Axe of Slaughter", "none", "none", "Kick");
+        //setWeaponsAndSpecial("Palladius\\' Axe of Slaughter", "none", "none", "Kick");
+        //setWeaponsAndSpecial("Bloodied Berserker\\'s Blade", "none", "none", "Bash");Shuriken of the Tranquil
+        //setWeaponsAndSpecial("Goldenrod", "none", "none", "none");
+        //setWeaponsAndSpecial("The Sword of Ssraeshza", "none", "none", "none");
         //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "none", "none", "Backstab");
         //setWeaponsAndSpecial("Salindrite Dagger", "Baton of Flame", "none", "Kick");
         //setWeaponsAndSpecial("none", "none", "Primal Velium Reinforced Bow", "none");
         //setWeaponsAndSpecial("Emaciated Maul of the Overseer", "none", "none", "Kick");
         //setWeaponsAndSpecial("Baton of Flame", "Salindrite Dagger", "none", "Kick");
-        //arrowDamage, arrowElementalDamage, arrowElementalType,
+
+        //arrowDamage, arrowElementalDamage, arrowElementalType
         //Blessed Champion Arrows
         //setArrows(11, 4, 1);
         //Shardwing
-        setArrows(12, 0, 0);
+        //setArrows(12, 0, 0);
+        //None
+        setArrows(0, 0, 0);
 
         //ambidexterity, combatFury, archery mastery, spell casting fury
         //flurry 15% at r3, berserk
-        setBerserkAndAA(32, 75, 3, 3, 15, true);
+        //Combat Fury 1 2 3: 15, 40, 75. FotA1 2 3: 100, 125, 150
+        setBerserkAndAA(32, 75, 0, 0, 0, false);
+        //setBerserkAndAA(32, 150, 3, 3, 15, true);
 
-        //archeryMod, backstabMod
-        setSkillMods(1.04, 1.12);
-        setAttackAndHaste();
+        // Punishing Blade and Speed of the Knight are equivalent r 1 2 3 : 2% 4% 8% extra attack
+        setPunishingBlade(0);
+
+        setSkillMods(1.04, 1.12); // archeryMod, backstabMod
+        setPiercingMod(1.07); // Tor Vignus 7% mod, set to 1 to remove mod
+        setWornSpellHastePreBard(100); // If bard is true, adds 25%
+        setMobListToParse();
+        setUseCustomResists(false);
+        setUseCustomAC(false);
+
+        // Build file name based on inputs
+        String filename = "resources/eqlog_" + playerName + "_" + characterClass;
+        if (!primary.equals("none")) {
+            filename += "_" + getCleanName(primary);
+        }
+        if (!secondary.equals("none")) {
+            filename += "_" + getCleanName(secondary);
+        }
+        if (!ranged.equals("none")) {
+            filename += "_" + getCleanName(ranged);
+        }
+        filename += "_Vs_" + getCleanName(mobList[0]) + ".txt";
+        setFileToWriteTo(filename);
+        fh.clearFile(filename);
 
         setCharacterSheet(new CharacterSheet(level, characterClass, primary, secondary, ranged, specialAttack, spellAttack, wornAttack,
                 haste, stats, ambidexterity, archeryMultipliers, combatFury, archeryMod, backstabMod,
                 arrowDamage, arrowElementalDamage, arrowElementalType, berserk, flurry, fh));
+
 
         if (!cs.getPrimaryWeapon().equals("none")) {
             primaryHastedDelay = (int)(hastedDelay(cs.getPrimary())*1000);
@@ -126,14 +164,12 @@ public class Controller {
             setSpecialDelay(cs.getSpecialAttack());
         }
 
-        setMobListToParse();
-        setUseCustomResists(false);
-
-        setUseCustomAC(false);
         CombatRound crMH = new CombatRound();
         CombatRound crOH = new CombatRound();
         CombatRound crSp = new CombatRound();
         CombatRound crRng = new CombatRound();
+        //calefaction 1740
+        //Spell sunVortex = new Spell(3325); //sun vortex
 
         runMobList(fh, crMH, crOH, crSp, crRng); //file handling and rounds to parse
     }
@@ -150,9 +186,7 @@ public class Controller {
 
         for (String s : mobList) {
             setTargetMob(new Mob(s));
-            // 300000 milliseconds is 5 minutes
-            // 3.6e+7 milliseconds is 10 hours
-            combatRound(fh, crMH, crOH, crSp, crRng, 3.6e+7, s);
+            combatRound(fh, crMH, crOH, crSp, crRng, timeToParse, s);
         }
     }
 
@@ -170,6 +204,7 @@ public class Controller {
      */
     public void setMobListToParse() {
         mobList = new String[] {"The_Avatar_of_War"};
+        //mobList = new String[] {"Gozzrem"};
         //mobList = new String[] {"Ikatiar_the_Venom"};
         //mobList = new String[] {"Mistress_of_Scorn"};
         //mobList = new String[] {"a_racnar", "a_racnar", "a_racnar", "a_racnar", "a_racnar",
@@ -189,7 +224,7 @@ public class Controller {
      * @param mob target mob name
      */
     private static void combatRound(FileHandling fh, CombatRound crMH, CombatRound crOH, CombatRound crSp,
-                                    CombatRound crRng, double millisecondsToParse, String mob) {
+                                    CombatRound crRng, long millisecondsToParse, String mob) {
 
         DateFormat simple = new SimpleDateFormat("E MMM dd HH:mm:ss y");
 
@@ -218,6 +253,11 @@ public class Controller {
                     discStartTimer = i;
                 }
 
+                // Server tick for mana regen (pretending it's always synchronized
+                if (i % 6000 == 0) {
+                    cs.manaRegenTick();
+                }
+
                 if (discStartTimer + Discipline.getAbilityTimer() == i) {
                     String discEnd = "[" + simple.format(result) + "] " + String_ID.discEndFlavorText(discipline) + "\r\n";
                     if (reportToConsole) {
@@ -239,7 +279,7 @@ public class Controller {
                     primaryDot(fh, mob, cs.getPrimary().getProcName(), simple.format(result));
                 }
                 // Primary procs
-                if ((i % primaryHastedDelay) == 0) {
+                if ((i % (primaryHastedDelay + spellCastingOffsetPrimary)) == 0) {
                     if (random((float) cs.getPrimary().getProcChance())) {
                         primaryProcDamage = cs.getPrimary().doProc(targetMob);
                         if (primaryProcDamage >= -1) {
@@ -268,7 +308,14 @@ public class Controller {
                                 }
                             }
                         }
-                        // TODO: Add Punishing Blade and Speed of the Knight here
+                    }
+                    // Punishing blade or speed of the knight swing if monk or paladin with the aa
+                    if (cs.getPrimary().getWeaponType().equals("2HBlunt") ||
+                            cs.getPrimary().getWeaponType().equals("2HSlash") ||
+                            cs.getPrimary().getWeaponType().equals("2HPiercing")) {
+                        if (random(punishOrKnightExtraAttack)) {
+                            primarySwing(fh, crMH, mob, simple.format(result));
+                        }
                     }
                     //reportRound("primary", primary);
                 }
@@ -282,7 +329,7 @@ public class Controller {
                         secondaryDot(fh, mob, cs.getSecondary().getProcName(), simple.format(result));
                         // Secondary procs
                     }
-                    if ((i % secondaryHastedDelay) == 0) {
+                    if ((i % (secondaryHastedDelay + spellCastingOffsetPrimary)) == 0) {
                         if (random((float) cs.getSecondary().getProcChance())) {
                             secondaryProcDamage = cs.getSecondary().doProc(targetMob);
                             if (secondaryProcDamage >= -1) {
@@ -305,7 +352,7 @@ public class Controller {
             }
             // Special attack
             if (!cs.getSpecial().equals("none")) {
-                if (i % specialHastedDelay == 0) {
+                if (i % (specialHastedDelay + spellCastingOffsetPrimary) == 0) {
                     specialAttack(fh, crSp, mob, simple.format(result));
                     // Double attack
                     if (random((float) doubleChance(SpecialAttack.getSpecialName()))) {
@@ -322,7 +369,7 @@ public class Controller {
                         rangedDot(fh, mob, cs.getRanged().getProcName(), simple.format(result));
                     }
                     // Ranged procs
-                    if ((i % rangedHastedDelay) == 0) {
+                    if ((i % (rangedHastedDelay + spellCastingOffsetPrimary)) == 0) {
                         if (random((float) cs.getRanged().getProcChance())) {
                             rangedProcDamage = cs.getRanged().doProc(targetMob);
                             if (rangedProcDamage >= -1) {
@@ -637,7 +684,9 @@ public class Controller {
      * @param mob the target mob
      */
     private static void rangedAttack(FileHandling fh, CombatRound crRng, String mob, String timestamp) {
-        rangedDamage = crRng.attack(cs.getRanged(), "ranged", cs.getOffenseRanged());
+        String rangedType = cs.getRanged().getWeaponType();
+
+        rangedDamage = crRng.attack(cs.getRanged(), rangedType, cs.getOffenseRanged());
         String ra;
         if (fullCombatTextToFile) {
             if (rangedDamage != 0) {
@@ -1098,7 +1147,7 @@ public class Controller {
                 spellAttack += 20;
                 if (owl) {
                     wornAttack += 20;
-                } else if (epic) {
+                } if (epic) {
                     wornAttack += 30;
                 }
                 break;
@@ -1109,7 +1158,7 @@ public class Controller {
                 break;
             case "Monk" :
                 if (epic) {
-                    wornAttack += 15;
+                    spellAttack += 15;
                 }
                 break;
             case "Bard" :
@@ -1196,10 +1245,26 @@ public class Controller {
     }
 
     /**
+     * Setter method to set skill mods for piercing
+     * @param mod skill modifier for piercing
+     */
+    public void setPiercingMod(double mod) {
+        this.piercingMod = mod;
+    }
+
+    /**
+     * Getter method for piercing mod
+     * @return piercing mod
+     */
+    public static double getPiercingMod() {
+        return piercingMod;
+    }
+
+    /**
      * Setter method to set haste, bard adds 25% v3
      */
-    public void setAttackAndHaste() {
-        haste = 100;
+    public void setWornSpellHastePreBard(int h) {
+        haste = h;
         if(bard) {
             haste += 25;
         }
@@ -1277,6 +1342,30 @@ public class Controller {
     }
 
     /**
+     * Percent chance for extra attacks for monks and paladins based on aa rank
+     * @param aaRank the rank of AA for either punishing blade or speed of the knight aa
+     * @return the percent chance for an extra attack
+     */
+    public void setPunishingBlade(int aaRank) {
+        if (characterClass.equals("Monk") || characterClass.equals("Paladin")) {
+            switch (aaRank) {
+                case 1 :
+                    punishOrKnightExtraAttack = 2;
+                    break;
+                case 2 :
+                    punishOrKnightExtraAttack = 4;
+                    break;
+                case 3 :
+                    punishOrKnightExtraAttack = 8;
+                    break;
+                default :
+                    punishOrKnightExtraAttack = 0;
+                    break;
+            }
+        }
+    }
+
+    /**
      * Converts the weapon type to a verb
      * 1hs/2hs slashing
      * 1hb/2hb crush
@@ -1298,6 +1387,8 @@ public class Controller {
                 return "pierce";
             case("Archery") :
                 return "shoot";
+            case("Throwing") :
+                return "hit";
             default :
                 return "punch";
         }
@@ -1309,7 +1400,7 @@ public class Controller {
      * @return a cleaned string version of the mob name
      */
     public static String getCleanName(String mobName) {
-        return mobName.replaceAll("_", " ");
+        return mobName.replaceAll("[_\\\\]", " ");
     }
 
     /**
@@ -1401,5 +1492,33 @@ public class Controller {
      */
     public void setFileToWriteTo(String fileToWriteTo) {
         this.fileToWriteTo = fileToWriteTo;
+    }
+
+    /**
+     * Setter method to set the fight length
+     * @param v the time to parse
+     */
+    private void setTimeToParse(long v) {
+        timeToParse = v;
+    }
+
+    /**
+     * Setter that sets delay that is used in conjunction with casting
+     * @param reactionTimePlusPing reaction time plus ping in milliseconds
+     */
+    public static void setReactionTimePlusPing(long reactionTimePlusPing) {
+        Controller.reactionTimePlusPing = reactionTimePlusPing;
+    }
+
+    /**
+     *
+     * @return true if the sim is attempting to maintain mana ratio equal to
+     */
+    public static boolean isManaRatioEqualToBossHP() {
+        return manaRatioEqualToBossHP;
+    }
+
+    public static void setManaRatioEqualToBossHP(boolean manaRatioEqualToBossHP) {
+        Controller.manaRatioEqualToBossHP = manaRatioEqualToBossHP;
     }
 }

@@ -17,30 +17,20 @@ public class CharacterSheet {
     private int defense, block, dodge, parry, riposte;
     private int doubleAttack, dualWieldSkill, offensePrimary, offenseSecondary, offenseSpecial, offenseRanged, offense;
     private int flyingKick, eagleStrike, tigerClaw, dragonPunch, roundKick;
-    private int specializeAbjure, specializeAlteration, specializeConjuration, specializeDivination, specializeEvocation;
+    private int specializeAbjuration, specializeAlteration, specializeConjuration, specializeDivination, specializeEvocation;
     private int singing, stringed, percussion, wind, brass;
-    private int spellAttack;
-    private int wornAttack;
-    private static int haste;
-    private int damageBonus;
-    private int arrowDamage;
-    private String skillIDs, skillCaps, classIDs, specialType, arrow;
-    private int strength;
-    private static int dexterity;
-    private int agility;
-    private int wisdom;
-    private static int intelligence;
-    private int charisma;
-    private int stamina;
+    private int spellAttack, wornAttack, damageBonus, arrowDamage;
+    private String skillIDs, skillCaps, classIDs, arrow;
+    private int strength, agility, wisdom, charisma, stamina;
+    private static int intelligence, dexterity, haste, maximumMana = 0, currentMana = 0, manaRegen = 50;
+    private static int manaFromItems = 1000, manaFromSpells = 250;
     private static Weapon primary;
-    private Weapon secondary;
-    private Weapon ranged;
+    private Weapon secondary, ranged;
     private String primaryWeapon, secondaryWeapon, rangedWeapon, special;
     private SpecialAttack specialAttack, rangedAttack;
     private int primarySkillCap, secondarySkillCap, specialSkillCap;
-    private double archerySkillMod;
-    private static double backstabSkillMod;
-    private double amMultiplier;
+    private double archerySkillMod, amMultiplier;
+    private static double backstabSkillMod, piercingSkillMod;
     private float dualWieldChance;
     private boolean berserk;
     private int combatFury, flurry = 0, ambidexterity = 0;
@@ -81,6 +71,7 @@ public class CharacterSheet {
         this.special = special;
         this.archerySkillMod = archerySkillMod;
         this.backstabSkillMod = backstabSkillMod;
+        this.piercingSkillMod = Controller.getPiercingMod();
         setLevel(level);
         setCharacterClass(characterClass);
         getSkillTables();
@@ -93,6 +84,9 @@ public class CharacterSheet {
         setDoubleAttack();
         setDefense();
         setOffense();
+        setMaximumMana();
+        setCurrentMana();
+        setSpecialization("Conjuration");
         setHaste(haste);
         setWornAttack(wornAttack);
         setSpellAttack(spellAttack);
@@ -105,6 +99,10 @@ public class CharacterSheet {
 
         if (!primaryWeapon.equals("none")) {
             primary = new Weapon(primaryWeapon, level, "primary", dualWieldChance);
+
+            if (primary.getWeaponType().equals("1HPiercing"))
+                setPiercing();
+
             setPrimarySkillCap();
             setOffensePrimary();
             setDamageBonus();
@@ -112,23 +110,28 @@ public class CharacterSheet {
         }
         if (!secondaryWeapon.equals("none")) {
             secondary = new Weapon(secondaryWeapon, level, "secondary", dualWieldChance);
+
+            if (secondary.getWeaponType().equals("1HPiercing"))
+                setPiercing();
+
             setSecondarySkillCap();
             setOffenseSecondary();
             //displayWeaponStats(secondary, fh, false);
         }
         if (!rangedWeapon.equals("none")) {
             ranged = new Weapon(rangedWeapon, level, "ranged", dualWieldChance);
-            setArchery();
+            if (ranged.getWeaponType().equals("Archery"))
+                setArchery();
+            else
+                setThrowing();
             rangedAttack = new SpecialAttack(special, level, ranged, archery,
                     arrowDamage, arrowElementalDamage, arrowElementalType);
             setOffenseRanged();
             //displayWeaponStats(ranged, fh, false);
         }
         if (!special.equals("none")) {
-
             setSpecialSkillCap(special);
             specialAttack = new SpecialAttack(special, level, specialSkillCap);
-            specialType = special;
             setSpecial(special);
             setOffenseSpecial();
         }
@@ -272,7 +275,6 @@ public class CharacterSheet {
         length = skillIDString.length() + 1 + classString.length() + 1 + levelString.length() + 1;
         tempString = skillCaps.substring(indexStart + length, indexStart + length + 5);
         indexEnd = tempString.indexOf(",");
-
         return Integer.parseInt(tempString.substring(0, indexEnd));
     }
 
@@ -368,7 +370,9 @@ public class CharacterSheet {
      * Setter method for 1h pierce skill cap
      */
     public void setPiercing() {
-        piercing = getSkillCap(getSkillID("1HPiercing"));
+        piercing = (int)(getSkillCap(getSkillID("1HPiercing")) * piercingSkillMod);
+        if (piercing > 252)
+            piercing = 252;
     }
 
     /**
@@ -608,7 +612,11 @@ public class CharacterSheet {
      * Setter method for double attack skill cap
      */
     public void setDoubleAttack() {
-        doubleAttack = getSkillCap(getSkillID("DoubleAttack"));
+        if (characterClass.equals("Warrior") || characterClass.equals("Monk")
+                || characterClass.equals("Ranger") || characterClass.equals("Bard")
+                || characterClass.equals("Beastlord") || characterClass.equals("Rogue")
+                || characterClass.equals("Paladin") || characterClass.equals("ShadowKnight"))
+                    doubleAttack = getSkillCap(getSkillID("DoubleAttack"));
     }
 
     /**
@@ -818,8 +826,11 @@ public class CharacterSheet {
         } else {
             statBonus = strength;
         }
+        if (ranged.getWeaponType().equals("Archery"))
+            offenseRanged = archery + spellAttack + wornAttack;
+        if (ranged.getWeaponType().equals("Throwing"))
+            offenseRanged = throwing + spellAttack + wornAttack;
 
-        offenseRanged = archery + spellAttack + wornAttack;
         if(statBonus >= 75)
             offenseRanged += ((2 * statBonus - 150) / 3);
         if (offenseRanged < 1)
@@ -918,14 +929,14 @@ public class CharacterSheet {
      * @return specialize abjuration skill cap
      */
     public int getSpecializeAbjuration() {
-        return specializeAbjure;
+        return specializeAbjuration;
     }
 
     /**
      * setter method for specialize abjuration skill cap
      */
     public void setSpecializeAbjuration() {
-        specializeAbjure = getSkillCap(getSkillID("specializeAbjure"));
+        specializeAbjuration = getSkillCap(getSkillID("specializeAbjure"));
     }
 
     /**
@@ -1356,7 +1367,10 @@ public class CharacterSheet {
      * Setter method for primary skill cap
      */
     public void setPrimarySkillCap() {
-        this.primarySkillCap = getSkillCap(getWeaponSkill(primary.getWeaponType()));
+        this.primarySkillCap = getWeaponSkill(primary.getWeaponType());
+        if (primarySkillCap > 252)
+            primarySkillCap = 252;
+        System.out.println("psc: " + primarySkillCap);
     }
 
     /**
@@ -1371,7 +1385,10 @@ public class CharacterSheet {
      * Setter method for secondary skill cap
      */
     public void setSecondarySkillCap() {
-        this.secondarySkillCap = getSkillCap(getWeaponSkill(secondary.getWeaponType()));
+        this.secondarySkillCap = getWeaponSkill(secondary.getWeaponType());
+        if (secondarySkillCap > 252)
+            secondarySkillCap = 252;
+        System.out.println("ssc: " + secondarySkillCap);
     }
 
     /**
@@ -1545,8 +1562,10 @@ public class CharacterSheet {
         int toHit = 7 + getOffense();
         if (skill.equals("Archery")){
             toHit += (int)(getSkillCap(getSkillID(skill)) * archerySkillMod);
-        } else if (skill.equals("Backstab")){
+        } else if (skill.equals("Backstab")) {
             toHit += (int)(getSkillCap(getSkillID(skill)) * backstabSkillMod);
+        } else if (skill.equals("1HPiercing")) {
+            toHit += (int)(getSkillCap(getSkillID(skill)) * piercingSkillMod);
         } else {
             toHit += getSkillCap(getSkillID(skill));
         }
@@ -1673,5 +1692,96 @@ public class CharacterSheet {
      */
     public static double getBackstabSkillMod() {
         return backstabSkillMod;
+    }
+
+    /**
+     * CurrentMana ticks up mana with mana regen
+     */
+    public static void manaRegenTick() {
+        currentMana += manaRegen;
+    }
+
+    /**
+     * Method mostly straight from Quarm code to set character maximum mana
+     */
+    public void setMaximumMana() {
+        int WisInt;
+        int MindLesserFactor, MindFactor;
+        if (characterClass.equals("Cleric") || characterClass.equals("Druid") || characterClass.equals("Shaman") ||
+                characterClass.equals("Ranger") || characterClass.equals("Beastlord") || characterClass.equals("Paladin")) {
+            WisInt = getWisdom();
+        } else if (characterClass.equals("Bard") || characterClass.equals("ShadowKnight") || characterClass.equals("Enchanter") ||
+                characterClass.equals("Magician") || characterClass.equals("Necromancer") || characterClass.equals("Wizard")) {
+            WisInt = getIntelligence();
+        } else {
+            return;
+        }
+
+        if(((WisInt - 199) / 2) > 0)
+            MindLesserFactor = ( WisInt - 199 ) / 2;
+        else
+            MindLesserFactor = 0;
+
+        MindFactor = WisInt - MindLesserFactor;
+
+        if(WisInt > 100)
+            maximumMana = (((5 * (MindFactor + 20)) / 2) * 3 * level / 40);
+        else
+            maximumMana = (((5 * (MindFactor + 200)) / 2) * 3 * level / 100);
+
+        maximumMana += manaFromItems + manaFromSpells;
+
+        if (maximumMana > 32767) {
+            maximumMana = 32767;
+        }
+    }
+
+    /**
+     * Fills current mana to character max
+     */
+    private void setCurrentMana() {
+        currentMana = maximumMana;
+    }
+
+    /**
+     * Getter method to check max mana
+     * @return max mana of the character
+     */
+    public int getMaximumMana() {
+        return maximumMana;
+    }
+
+    /**
+     * Sets primary and secondary specializations for pure casters
+     * @param specialization primary specialization
+     */
+    public void setSpecialization(String specialization) {
+        if (characterClass.equals("Cleric") || characterClass.equals("Druid") || characterClass.equals("Shaman")
+                || characterClass.equals("Enchanter") || characterClass.equals("Magician")
+                || characterClass.equals("Necromancer") || characterClass.equals("Wizard")) {
+            specializeAbjuration = 50;
+            specializeAlteration = 50;
+            specializeConjuration = 50;
+            specializeDivination = 50;
+            specializeEvocation = 50;
+
+            switch (specialization) {
+                case ("abjuration") :
+                    specializeAbjuration = 200;
+                    break;
+                case ("alteration") :
+                    specializeAlteration = 200;
+                    break;
+                case ("conjuration") :
+                    specializeConjuration = 200;
+                    break;
+                case ("divination") :
+                    specializeDivination = 200;
+                    break;
+                case ("evocation") :
+                    specializeEvocation = 200;
+                    break;
+            }
+        }
     }
 }
