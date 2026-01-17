@@ -11,7 +11,8 @@ public class Weapon {
     private int damage;
     private int delay;
     private int classes;
-    private int procRate, procSpellID;
+    private int procRate;
+    private Integer procSpellID;
     private int elementalDamage, elementalType;
     private static int casterLevel;
     private String weaponName;
@@ -42,11 +43,13 @@ public class Weapon {
         classes = getIntElement(21);
         delay = getIntElement(27);
         procSpellID = getIntElement(82);
-        if (procSpellID != -1 && procSpellID != 2434) {
-            proc = new Spell(procSpellID);
-            procName = proc.getSpellName();
-            effect_value = new int[12];
-            calculateProcChance(dwc);
+        if (convertNull(procSpellID)) {
+            if (procSpellID != -1 && procSpellID != 2434 && procSpellID != 0) {
+                proc = new Spell(procSpellID);
+                procName = proc.getSpellName();
+                effect_value = new int[12];
+                calculateProcChance(dwc);
+            }
         }
         procRate = getIntElement(61);
         weaponType = weapTypetoString(getIntElement(50));
@@ -217,6 +220,8 @@ public class Weapon {
                 return "2HBlunt";
             case 5:
                 return "Archery";
+            case 19:
+                return "Throwing";
             case 45:
                 return "HandtoHand";
             default:
@@ -283,14 +288,14 @@ public class Weapon {
      */
     public int getActSpellDamage(int spell_id, int dmg, int maxHit) {
         critical = false;
-        // TODO add harm touch AA, currently nots ure what spell IDs
+        // TODO add harm touch AA, currently not sure what spell IDs
         //  if (spell_id == SPELL_IMP_HARM_TOUCH)	// Improved Harm Touch AA skill
         //     dmg -= GetAA(aaUnholyTouch) * 450;	// Unholy Touch AA
         //
         //  if ((spell_id == SPELL_HARM_TOUCH || spell_id == SPELL_HARM_TOUCH2 || spell_id == SPELL_IMP_HARM_TOUCH) && HasInstantDisc(spell_id))		// Unholy Aura disc; 50% dmg is guaranteed
         //      dmg = dmg * 150 / 100;
 
-        String item_name;
+        //String item_name;
         int focusDmg = 0;
 
         // TODO implement spell focus
@@ -304,32 +309,34 @@ public class Weapon {
         //      dmg += dmg * GetFocusEffect(focusSpellDamageMult, spell_id, item_name) / 100;
         //  }
 
-                //Quarm implementation but we don't really have spell or item bonuses that give crit
-        //int critChanceAA = itembonuses.CriticalSpellChance + spellbonuses.CriticalSpellChance + aabonuses.CriticalSpellChance;
         //Spell casting fury 2 4 and 7 percent for ranks 1 2 and 3
         int critChanceAA = Controller.getSpellCastingFury();
 
-
-        switch(critChanceAA) {
-            case(1) :
-                critChanceAA = 2;
-                break;
-            case(2) :
-                critChanceAA = 4;
-                break;
-            case(3) :
-                critChanceAA = 7;
-                break;
-            default :
-                critChanceAA = 0;
+        // Sanity check to prevent enabling spellcasting fury for non casters
+        if(!CharacterSheet.getCharacterClass().equals("Monk") && !CharacterSheet.getCharacterClass().equals("Warrior") &&
+                !CharacterSheet.getCharacterClass().equals("Rogue")) {
+            switch (critChanceAA) {
+                case (1):
+                    critChanceAA = 2;
+                    break;
+                case (2):
+                    critChanceAA = 4;
+                    break;
+                case (3):
+                    critChanceAA = 7;
+                    break;
+                default:
+                    critChanceAA = 0;
+            }
         }
 
         if (Controller.random(critChanceAA)) {
             critical = true;
         }
 
-        // Improved Harm Touch is a guaranteed crit if you have at least one level of SCF.
-        //  if (spell_id == SPELL_IMP_HARM_TOUCH && (GetAA(aaSpellCastingFury) > 0) && (GetAA(aaUnholyTouch) > 0))
+        // Improved Harm Touch is a guaranteed crit if you have at least one level of SCF. Harm Touch spellID = 88
+        // TODO Unholy touch AA
+        //  if (spell_id == 88 && (critChanceAA > 0) && (Controller.getUnholyTouch() > 0))
         //      critical = true;
 
         if (critical)
@@ -384,6 +391,7 @@ public class Weapon {
 
     /**
      * Setter method to calculate proc chance of the weapon
+     * @param dwc dual wield chance
      */
     public void calculateProcChance(float dwc) {
         double dex = CharacterSheet.getDexterity();
@@ -402,5 +410,14 @@ public class Weapon {
      */
     public static boolean isCritical() {
         return critical;
+    }
+
+    /**
+     * Checks to see if the argument i is null or not
+     * @param i the int to check
+     * @return true if i is not null
+     */
+    private boolean convertNull(Integer i){
+        return 0 == ( i == null ? 0 : i);
     }
 }

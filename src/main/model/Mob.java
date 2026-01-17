@@ -195,7 +195,6 @@ public class Mob {
      * @return percent chance to hit as a float
      */
     public float hitChance(CharacterSheet cs, String skillInUse) {
-
         int toHit = cs.getToHit(skillInUse);
         int avoidance = getAvoidance();
         int toHitPct = 0;

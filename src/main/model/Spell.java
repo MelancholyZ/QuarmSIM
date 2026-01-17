@@ -8,7 +8,8 @@ import main.controller.Controller;
 public class Spell {
     private int spellID, manaCost, resistType, skill, resistDiff, aoeDuration;
     private int buffDurationFormula, buffDuration;
-    private double recastTime, recoveryTime, castTime;
+    private double recastTime, recoveryTime;
+    private long castTime;
     private String allSpells, spell, name, spellTextOnHit, spellFades;
     private Number[] base;
     private int partialCapable;
@@ -409,8 +410,7 @@ public class Spell {
             updownsign = 1;
         }
 
-        switch(formula)
-        {
+        switch(formula) {
             // 60 and 70 are used only in magician air pet stuns
             // This was making the stuns last only 30 milliseconds
             // commenting this out so it uses the default case, which works better.  No idea what it should be
@@ -638,4 +638,11 @@ public class Spell {
         return result;
     }
 
+    /**
+     * Getter method to get spell cast time
+     * @return spell cast time in milliseconds
+     */
+    public long getCastTime() {
+        return castTime;
+    }
 }
