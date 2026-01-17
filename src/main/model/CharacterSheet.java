@@ -102,7 +102,6 @@ public class CharacterSheet {
 
             if (primary.getWeaponType().equals("1HPiercing"))
                 setPiercing();
-
             setPrimarySkillCap();
             setOffensePrimary();
             setDamageBonus();
@@ -113,7 +112,6 @@ public class CharacterSheet {
 
             if (secondary.getWeaponType().equals("1HPiercing"))
                 setPiercing();
-
             setSecondarySkillCap();
             setOffenseSecondary();
             //displayWeaponStats(secondary, fh, false);
@@ -1352,7 +1350,6 @@ public class CharacterSheet {
         dexterity = score;
         intelligence = score;
         wisdom = score;
-
     }
 
     /**
@@ -1384,7 +1381,7 @@ public class CharacterSheet {
      * Setter method for secondary skill cap
      */
     public void setSecondarySkillCap() {
-        this.secondarySkillCap = getSkillCap(getWeaponSkill(secondary.getWeaponType()));
+        this.secondarySkillCap = getWeaponSkill(secondary.getWeaponType());
         if (secondarySkillCap > 252)
             secondarySkillCap = 252;
     }
@@ -1783,5 +1780,3 @@ public class CharacterSheet {
         }
     }
 }
-
-
