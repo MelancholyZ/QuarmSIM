@@ -82,6 +82,7 @@ public class CharacterSheet {
         setDualWield();
         setDualWieldChance();
         setDoubleAttack();
+        setWeaponSkills();
         setDefense();
         setOffense();
         setMaximumMana();
@@ -99,9 +100,6 @@ public class CharacterSheet {
 
         if (!primaryWeapon.equals("none")) {
             primary = new Weapon(primaryWeapon, level, "primary", dualWieldChance);
-
-            if (primary.getWeaponType().equals("1HPiercing"))
-                setPiercing();
             setPrimarySkillCap();
             setOffensePrimary();
             setDamageBonus();
@@ -109,9 +107,6 @@ public class CharacterSheet {
         }
         if (!secondaryWeapon.equals("none")) {
             secondary = new Weapon(secondaryWeapon, level, "secondary", dualWieldChance);
-
-            if (secondary.getWeaponType().equals("1HPiercing"))
-                setPiercing();
             setSecondarySkillCap();
             setOffenseSecondary();
             //displayWeaponStats(secondary, fh, false);
@@ -1165,6 +1160,18 @@ public class CharacterSheet {
         fh.writeToFile("resources/ParseOutput", "Proc Rate: ");
         fh.writeToFile("resources/ParseOutput", Integer.toString(weapon.getProcRate()));
         fh.writeToFile("resources/ParseOutput", "\n");
+    }
+
+    /**
+     * Sets all weapon skills based on class
+     */
+    public void setWeaponSkills() {
+        setOneHandedBlunt();
+        setTwoHandedSlashing();
+        setOneHandedSlashing();
+        setTwoHandedSlashing();
+        setPiercing();
+        setHandToHand();
     }
 
     /**

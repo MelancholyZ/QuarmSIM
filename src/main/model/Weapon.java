@@ -25,6 +25,8 @@ public class Weapon {
     private double procChance = 0.0;
     private String slot;
     private static boolean critical = false;
+    private int skillmodType;
+    private int skillmodValue;
 
     /**
      * Default constructor for the Weapon class
@@ -57,6 +59,8 @@ public class Weapon {
         elementalType = getIntElement(31);
         ClassBitmask cb = new ClassBitmask(classes);
         classList = cb.getClasses();
+        skillmodType = getIntElement(69);
+        skillmodValue = getIntElement(70);
         setWeaponCleanName();
     }
 
@@ -418,6 +422,6 @@ public class Weapon {
      * @return true if i is not null
      */
     private boolean convertNull(Integer i){
-        return 0 == ( i == null ? 0 : i);
+        return 0 != ( i == null ? 0 : i);
     }
 }
