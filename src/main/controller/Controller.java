@@ -17,7 +17,7 @@ public class Controller {
     private static Mob targetMob;
     private static String[] mobList;
     public static double[][] totalDPS;
-    private static boolean useCustomResists, useCustomAC, epic, owl, bard, beastlord, ancientAvatar, berserk;
+    private static boolean useCustomResists, useCustomAC, bard, beastlord, ancientAvatar, berserk;
     private static int customResists, customAC;
     private static String characterClass;
     private static String playerName;
@@ -66,15 +66,14 @@ public class Controller {
         setDb(fh.readFromFile("resources/quarm_shortdb.sql"));
         setTimeToParse(36000000); // 300000 milliseconds is 5 minutes, 36000000 milliseconds is 10 hours
         setReactionTimePlusPing(150); // In milliseconds and you (probably) aren't Faker
-        setEpic(false); // True raises attack for classes that have attack on epic
-        setOwl(false); // Reduces ranger worn attack by 10 due to using owl mask for 4% archery mod
-        setBard(true); // Attack songs + epic
+        setBard(true); // McVaxius w/AAs (44 attack) + epic proc (30 attack)
         setBeastlord(true); // Savagery
         setAncientAvatar(true); // +25 attack over avatar
         setClass("Rogue");
         setPlayerName("Soandso");
-        setDiscipline(1059); //Fellstrike = Bestialrage = Innerflame = Duelist = 1059, Trueshot = 1067, Holyforge = 1065
-        setAttackLevels();
+        setDiscipline(1059); // Fellstrike = Bestialrage = Innerflame = Duelist = 1059, Trueshot = 1067, Holyforge = 1065
+        setWornAttack(250);
+        setSpellAttack();
         setFullCombatText(true);
         setReportToConsole(false);
         setWindOfTash(true);
@@ -85,8 +84,8 @@ public class Controller {
         // setCustomResists(i);
 
         //primary, secondary, ranged, specialAttack
-        //setWeaponsAndSpecial("Khalshazar", "Acrylia Handled Broadsword", "none", "Backstab");
-        setWeaponsAndSpecial("Khalshazar", "Acrylia Handled Broadsword", "none", "Backstab");
+        setWeaponsAndSpecial("Khalshazar", "Ragebringer", "none", "Backstab");
+        //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Ragebringer", "none", "Backstab");
         //setWeaponsAndSpecial("Yttrium War Hammer", "none", "none", "FlyingKick");
         //setWeaponsAndSpecial("Staff of Transcendence", "none", "none", "none");
         //setWeaponsAndSpecial("Caen\\'s Bo Staff of Fury", "none", "none", "none");
@@ -118,7 +117,8 @@ public class Controller {
         //None
         setArrows(0, 0, 0);
 
-        //ambidexterity, combatFury, archery mastery, spell casting fury
+        //ambidexterity (32), combatFury (15, 40, 75, PoP crit: 100, 125, 150)
+        //archery mastery (1 2 or 3), spell casting fury (1 2 or 3)
         //flurry 15% at r3, berserk
         //Combat Fury 1 2 3: 15, 40, 75. FotA1 2 3: 100, 125, 150
         setBerserkAndAA(32, 75, 0, 0, 0, false);
@@ -997,22 +997,6 @@ public class Controller {
     }
 
     /**
-     * Set to true to gain epic attack
-     * @param epic true if epic is equipped
-     */
-    public static void setEpic(boolean epic) {
-        Controller.epic = epic;
-    }
-
-    /**
-     * Setter method for 4% archery mod mask
-     * @param owl true if mask is equipped
-     */
-    public static void setOwl(boolean owl) {
-        Controller.owl = owl;
-    }
-
-    /**
      * Setter method that enables bard 25% v3 haste and attack songs plus epic proc
      * @param bard true if bard is pumping the group
      */
@@ -1096,13 +1080,6 @@ public class Controller {
     }
 
     /**
-        Worn attack stacking
-        3x AoB - 30 for non plate (Doze mask, SWC, Dain belt)
-        5x AoB - 50 for plate (Vindi bp + Ragefire gloves)
-
-        Ragebringer - 40
-        Swiftwind/Blade of Tactics/Claw of the Savage Spirit - 30
-
         Spell attack stacking
         VoG - 20
         Bih`Li - 15
@@ -1121,24 +1098,9 @@ public class Controller {
         Natures' Precision - 15
         Bard Jonathan's - 50
         Monk Epic - 40
-
-        Velious/Pre-Luclin Attack max
-        Monk        spell: 424  worn:           30  total: 454
-        Rogue       spell: 409  worn w/epic:    70  total: 479
-        Rogue       spell: 409  worn w/o epic:  30  total: 439
-        Ranger      spell: 429  worn w/owlbear: 50  total: 479
-        Ranger      spell: 429  worn w/epic:    60  total: 489
-        Ranger      spell: 429  worn:           30  total: 459
-        Warrior     spell: 409  worn w/epic:    80  total: 489
-        Warrior     spell: 409  worn w/o epic:  50  total: 459
-        Beastlord   spell: 409  worn w/epic:    60  total: 469
-        Beastlord   spell: 409  worn w/o epic:  30  total: 439
-        Knights     spell: 409  worn:           50  total: 459
-        Bard        spell: 459  worn:           50  total: 509
      */
-    public void setAttackLevels() {
+    public void setSpellAttack() {
         spellAttack = 210;
-        wornAttack = 30;
 
         if(bard) {
             spellAttack += 74;
@@ -1153,42 +1115,24 @@ public class Controller {
         switch(characterClass) {
             case "Ranger" :
                 spellAttack += 20;
-                if (owl) {
-                    wornAttack += 20;
-                } if (epic) {
-                    wornAttack += 30;
-                }
-                break;
-            case "Rogue" :
-                if (epic) {
-                    wornAttack += 40;
-                }
                 break;
             case "Monk" :
-                if (epic) {
-                    spellAttack += 15;
-                }
+                spellAttack += 15;
                 break;
             case "Bard" :
-            case "Paladin" :
-            case "ShadowKnight" :
-                wornAttack += 20;
-                break;
-            case "Beastlord" :
-                if (epic) {
-                    wornAttack += 30;
-                }
-                break;
-            case "Warrior" :
-                if (epic) {
-                    wornAttack += 50;
-                    break;
-                } else {
-                    wornAttack += 20;
-                }
+                spellAttack += 50;
                 break;
         }
     }
+
+    /**
+     * Setter method for worn attack
+     * @param attack total worn attack
+     */
+    private void setWornAttack(int attack) {
+        wornAttack = attack;
+    }
+
 
     /**
      * Setter method to set weapons and special attack, none means unequipped or no special attack
