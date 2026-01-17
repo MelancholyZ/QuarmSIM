@@ -66,7 +66,7 @@ public class Controller {
         setDb(fh.readFromFile("resources/quarm_shortdb.sql"));
         setTimeToParse(36000000); // 300000 milliseconds is 5 minutes, 36000000 milliseconds is 10 hours
         setReactionTimePlusPing(150); // In milliseconds and you (probably) aren't Faker
-        setEpic(true); // True raises attack for classes that have attack on epic
+        setEpic(false); // True raises attack for classes that have attack on epic
         setOwl(false); // Reduces ranger worn attack by 10 due to using owl mask for 4% archery mod
         setBard(true); // Attack songs + epic
         setBeastlord(true); // Savagery
@@ -85,15 +85,18 @@ public class Controller {
         // setCustomResists(i);
 
         //primary, secondary, ranged, specialAttack
+        //setWeaponsAndSpecial("Khalshazar", "Acrylia Handled Broadsword", "none", "Backstab");
+        setWeaponsAndSpecial("Khalshazar", "Acrylia Handled Broadsword", "none", "Backstab");
+        //setWeaponsAndSpecial("Yttrium War Hammer", "none", "none", "FlyingKick");
         //setWeaponsAndSpecial("Staff of Transcendence", "none", "none", "none");
         //setWeaponsAndSpecial("Caen\\'s Bo Staff of Fury", "none", "none", "none");
         //setWeaponsAndSpecial("Gharn\\'s Rock of Smashing", "Fist of Nature", "none", "none");
         //setWeaponsAndSpecial("Bo Staff of Transcendence", "none", "none", "none");
         //setWeaponsAndSpecial("Staff of the Silent Star", "none", "none", "none");
         // Monk: Gharn\\'s Rock of Smashing, Fist of Nature, Primal Velium Fist Wraps, Sceptre of Destruction, FlyingKick
-        // Ranger: Bow of the Destroyer, Primal Velium Reinforced Bow, Bow of Storms
-        // Rogue: Mrylokar\\'s Dagger of Vengeance, Massive Heartwood Thorn, Backstab
-        setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Tor Vignus", "none", "Backstab");
+        // Ranger: Bow of the Destroyer, Primal Velium Reinforced Bow, Bow of Storms, Khalshazar
+        // Rogue: Mrylokar\\'s Dagger of Vengeance, Massive Heartwood Thorn, Backstab, Acrylia Handled Broadsword
+        //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Tor Vignus", "none", "Backstab");
         //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Massive Heartwood Thorn", "none", "Backstab");
         //setWeaponsAndSpecial("Salindrite Dagger", "Ragebringer", "none", "Backstab");
         //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Ragebringer", "none", "Backstab");
@@ -124,8 +127,8 @@ public class Controller {
         // Punishing Blade and Speed of the Knight are equivalent r 1 2 3 : 2% 4% 8% extra attack
         setPunishingBlade(0);
 
-        setSkillMods(1.04, 1.12); // archeryMod, backstabMod
-        setPiercingMod(1.07); // Tor Vignus 7% mod, set to 1 to remove mod
+        setSkillMods(1.00, 1.12); // archeryMod, backstabMod
+        setPiercingMod(1.00); // Tor Vignus 7% mod, set to 1 to remove mod
         setWornSpellHastePreBard(100); // If bard is true, adds 25%
         setMobListToParse();
         setUseCustomResists(false);
@@ -149,7 +152,6 @@ public class Controller {
         setCharacterSheet(new CharacterSheet(level, characterClass, primary, secondary, ranged, specialAttack, spellAttack, wornAttack,
                 haste, stats, ambidexterity, archeryMultipliers, combatFury, archeryMod, backstabMod,
                 arrowDamage, arrowElementalDamage, arrowElementalType, berserk, flurry, fh));
-
 
         if (!cs.getPrimaryWeapon().equals("none")) {
             primaryHastedDelay = (int)(hastedDelay(cs.getPrimary())*1000);
@@ -203,6 +205,7 @@ public class Controller {
      * Vulak 1000 AC
      */
     public void setMobListToParse() {
+        //mobList = new String[] {"Lord_Inquisitor_Seru"};
         mobList = new String[] {"The_Avatar_of_War"};
         //mobList = new String[] {"Gozzrem"};
         //mobList = new String[] {"Ikatiar_the_Venom"};
@@ -650,11 +653,19 @@ public class Controller {
                         spa = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + specialDamage + ")\r\n";
                     }
                 }
-                spa += "[" + timestamp + "] " + "You " + cs.getSpecial().toLowerCase() + " " + getCleanName(mob) + " for "
-                        + specialDamage + " points of damage.\r\n";
+                spa += "[" + timestamp + "] " + "You ";
+                if (cs.getSpecial().equals("FlyingKick"))
+                    spa += "kick";
+                else
+                    spa += cs.getSpecial().toLowerCase();
+                spa += " " + getCleanName(mob) + " for " + specialDamage + " points of damage.\r\n";
             } else {
-                spa = "[" + timestamp + "] " + "You try to " + cs.getSpecial().toLowerCase() + " "
-                        + getCleanName(mob) + ", but miss!\r\n";
+                spa = "[" + timestamp + "] " + "You try to ";
+                if (cs.getSpecial().equals("FlyingKick"))
+                    spa += "kick";
+                else
+                    spa += cs.getSpecial().toLowerCase();
+                spa += " " + getCleanName(mob) + ", but miss!\r\n";
             }
         } else {
             if (specialDamage != 0) {
@@ -920,9 +931,6 @@ public class Controller {
         String tempDB;
         tableIndexStart = DBToScan.indexOf(tableName) - 14;
         tempDB = DBToScan.substring(tableIndexStart);
-        //if db - probably need to make two methods
-        //tableIndexEnd = tempDB.indexOf("character_set_client = utf8 */;");
-        //otherwise
         tableIndexEnd = tempDB.indexOf("CREATE", 20);
         return tempDB.substring(0, tableIndexEnd);
     }

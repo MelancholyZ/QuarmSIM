@@ -65,6 +65,10 @@ public class FileHandling {
         fileWriterPosition += fileContents.length();
     }
 
+    /**
+     * Converts the full DB to the shortened version used in this program
+     * @param fullDBPath the path of the full DB
+     */
     public void convertDBToShort(String fullDBPath) {
 
         String fullDB = readFromFile(fullDBPath);
@@ -90,7 +94,7 @@ public class FileHandling {
         newDB.append("Shaman 10,\n");
         newDB.append("Necromancer 11,\n");
         newDB.append("Wizard 12,\n");
-        newDB.append("Mage 13,\n");
+        newDB.append("Magician 13,\n");
         newDB.append("Enchanter 14,\n");
         newDB.append("Beastlord 15,\n");
         newDB.append("CREATE TABLE\n");
@@ -98,6 +102,10 @@ public class FileHandling {
         writeToFile("resources/quarm_shortdb.sql", newDB.toString());
     }
 
+    /**
+     * Method to clear the contents of the file
+     * @param filename the name of the file to clear
+     */
     public void clearFile(String filename) {
         try (FileOutputStream fos = new FileOutputStream(filename)) {
         } catch (IOException e) {
