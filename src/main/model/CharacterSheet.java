@@ -1384,7 +1384,7 @@ public class CharacterSheet {
      * Setter method for secondary skill cap
      */
     public void setSecondarySkillCap() {
-        this.secondarySkillCap = getWeaponSkill(secondary.getWeaponType());
+        this.secondarySkillCap = getSkillCap(getWeaponSkill(secondary.getWeaponType()));
         if (secondarySkillCap > 252)
             secondarySkillCap = 252;
     }
@@ -1783,4 +1783,5 @@ public class CharacterSheet {
         }
     }
 }
+
 
