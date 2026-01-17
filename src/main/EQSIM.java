@@ -21,7 +21,7 @@ public class EQSIM {
             FileHandling fh = new FileHandling();
 
             if(newDB) {
-                fh.convertDBToShort("resources/quarm_2025-04-12-16_11.sql");
+                fh.convertDBToShort("resources/quarm_2026-01-01-13_56.sql");
             }
 
             Frame f = new Frame();
