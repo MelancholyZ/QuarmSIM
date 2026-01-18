@@ -16,7 +16,6 @@ public class Controller {
     private static CharacterSheet cs;
     private static Mob targetMob;
     private static String[] mobList;
-    public static double[][] totalDPS;
     private static boolean useCustomResists, useCustomAC, bard, beastlord, ancientAvatar, berserk;
     private static int customResists, customAC;
     private static String characterClass;
@@ -45,7 +44,9 @@ public class Controller {
     private static long spellCastingOffsetSpecial = 0, spellCastingOffsetRanged = 0;
     private static long reactionTimePlusPing = 0;
     private static boolean fullCombatTextToFile, reportToConsole, windOfTash, malo, manaRatioEqualToBossHP;
+    private static boolean writeToFile, summarizedOutput;
     private static String fileToWriteTo;
+    private static SummarizedDamage sd;
 
 
     /**
@@ -65,27 +66,41 @@ public class Controller {
         setExpansion("PlanesEQ");
         setDb(fh.readFromFile("resources/quarm_shortdb.sql"));
         setTimeToParse(36000000); // 300000 milliseconds is 5 minutes, 36000000 milliseconds is 10 hours
+
         setReactionTimePlusPing(150); // In milliseconds and you (probably) aren't Faker
+
         setBard(true); // McVaxius w/AAs (44 attack) + epic proc (30 attack)
         setBeastlord(true); // Savagery
         setAncientAvatar(true); // +25 attack over avatar
+
         setClass("Rogue");
         setPlayerName("Soandso");
+
         setDiscipline(1059); // Fellstrike = Bestialrage = Innerflame = Duelist = 1059, Trueshot = 1067, Holyforge = 1065
         setWornAttack(250);
         setSpellAttack();
-        setFullCombatText(true);
+
+        setWriteToFile(false);
+        setFullCombatText(false);
         setReportToConsole(false);
+
+
+        setSummarizedOutput(true);
+        if(summarizedOutput) {
+            sd = new SummarizedDamage();
+        }
+
         setWindOfTash(true);
         setMalo(true);
         setManaRatioEqualToBossHP(true);
+
 
         // setCustomAC(i);
         // setCustomResists(i);
 
         //primary, secondary, ranged, specialAttack
-        setWeaponsAndSpecial("Khalshazar", "Ragebringer", "none", "Backstab");
-        //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Ragebringer", "none", "Backstab");
+        //setWeaponsAndSpecial("Khalshazar", "Ragebringer", "none", "Backstab");
+        setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Acrylia Handled Broadsword", "none", "Backstab");
         //setWeaponsAndSpecial("Yttrium War Hammer", "none", "none", "FlyingKick");
         //setWeaponsAndSpecial("Staff of Transcendence", "none", "none", "none");
         //setWeaponsAndSpecial("Caen\\'s Bo Staff of Fury", "none", "none", "none");
@@ -134,20 +149,22 @@ public class Controller {
         setUseCustomResists(false);
         setUseCustomAC(false);
 
-        // Build file name based on inputs
-        String filename = "resources/eqlog_" + playerName + "_" + characterClass;
-        if (!primary.equals("none")) {
-            filename += "_" + getCleanName(primary);
+        if (writeToFile) {
+            // Build file name based on inputs
+            String filename = "resources/eqlog_" + playerName + "_" + characterClass;
+            if (!primary.equals("none")) {
+                filename += "_" + getCleanName(primary);
+            }
+            if (!secondary.equals("none")) {
+                filename += "_" + getCleanName(secondary);
+            }
+            if (!ranged.equals("none")) {
+                filename += "_" + getCleanName(ranged);
+            }
+            filename += "_Vs_" + getCleanName(mobList[0]) + ".txt";
+            setFileToWriteTo(filename);
+            fh.clearFile(filename);
         }
-        if (!secondary.equals("none")) {
-            filename += "_" + getCleanName(secondary);
-        }
-        if (!ranged.equals("none")) {
-            filename += "_" + getCleanName(ranged);
-        }
-        filename += "_Vs_" + getCleanName(mobList[0]) + ".txt";
-        setFileToWriteTo(filename);
-        fh.clearFile(filename);
 
         setCharacterSheet(new CharacterSheet(level, characterClass, primary, secondary, ranged, specialAttack, spellAttack, wornAttack,
                 haste, stats, ambidexterity, archeryMultipliers, combatFury, archeryMod, backstabMod,
@@ -237,8 +254,9 @@ public class Controller {
                                         + " goes into a berserker frenzy!\r\n";
             if (reportToConsole) {
                 System.out.println(berserk);
+            } else if (writeToFile) {
+                fh.writeToFile(fileToWriteTo, berserk);
             }
-            fh.writeToFile(fileToWriteTo, berserk);
         }
 
         for (long i = 0; i < millisecondsToParse; i++) {
@@ -251,8 +269,9 @@ public class Controller {
                     String discStart = "[" + simple.format(result) + "] " + String_ID.discStartFlavorText(discipline) + "\r\n";
                     if (reportToConsole) {
                         System.out.println(discStart);
+                    } else if (writeToFile) {
+                        fh.writeToFile(fileToWriteTo, discStart);
                     }
-                    fh.writeToFile(fileToWriteTo, discStart);
                     discStartTimer = i;
                 }
 
@@ -265,8 +284,9 @@ public class Controller {
                     String discEnd = "[" + simple.format(result) + "] " + String_ID.discEndFlavorText(discipline) + "\r\n";
                     if (reportToConsole) {
                         System.out.println(discEnd);
+                    } else if (writeToFile) {
+                        fh.writeToFile(fileToWriteTo, discEnd);
                     }
-                    fh.writeToFile(fileToWriteTo, discEnd);
                     Discipline.setActiveDisc(0);
                 }
 
@@ -293,20 +313,20 @@ public class Controller {
                         }
                     }
                     // Primary swing
-                    primarySwing(fh, crMH, mob, simple.format(result));
+                    primarySwing(fh, crMH, mob, simple.format(result), 1);
                     // Double attack
                     if (random((float) doubleChance("primary"))) {
-                        primarySwing(fh, crMH, mob, simple.format(result));
+                        primarySwing(fh, crMH, mob, simple.format(result), 2);
                         // Triple attack
                         if (random((float) tripleChance("primary"))) {
-                            primarySwing(fh, crMH, mob, simple.format(result));
+                            primarySwing(fh, crMH, mob, simple.format(result), 3);
                             // Flurry
                             if (cs.getFlurry() > 0) {
                                 if (random((float) flurryChance("primary"))) {
-                                    primarySwing(fh, crMH, mob, simple.format(result));
+                                    primarySwing(fh, crMH, mob, simple.format(result), 4);
                                     // 2nd Flurry at 10% chance of the first
                                     if (random((float) flurryChance("primary") / 10)) {
-                                        primarySwing(fh, crMH, mob, simple.format(result));
+                                        primarySwing(fh, crMH, mob, simple.format(result), 5);
                                     }
                                 }
                             }
@@ -317,7 +337,7 @@ public class Controller {
                             cs.getPrimary().getWeaponType().equals("2HSlash") ||
                             cs.getPrimary().getWeaponType().equals("2HPiercing")) {
                         if (random(punishOrKnightExtraAttack)) {
-                            primarySwing(fh, crMH, mob, simple.format(result));
+                            primarySwing(fh, crMH, mob, simple.format(result), 4);
                         }
                     }
                     //reportRound("primary", primary);
@@ -343,11 +363,11 @@ public class Controller {
                             }
                         }
                         // Secondary swing
-                        secondarySwing(fh, crOH, mob, simple.format(result));
+                        secondarySwing(fh, crOH, mob, simple.format(result), 1);
 
                         // Secondary double attack
                         if (random((float) doubleChance("secondary"))) {
-                            secondarySwing(fh, crOH, mob, simple.format(result));
+                            secondarySwing(fh, crOH, mob, simple.format(result), 2);
                         }
                     }
                     //reportRound("secondary", secondary, i, j);
@@ -356,10 +376,10 @@ public class Controller {
             // Special attack
             if (!cs.getSpecial().equals("none")) {
                 if (i % (specialHastedDelay + spellCastingOffsetPrimary) == 0) {
-                    specialAttack(fh, crSp, mob, simple.format(result));
+                    specialAttack(fh, crSp, mob, simple.format(result), 1);
                     // Double attack
                     if (random((float) doubleChance(SpecialAttack.getSpecialName()))) {
-                        specialAttack(fh, crSp, mob, simple.format(result));
+                        specialAttack(fh, crSp, mob, simple.format(result), 2);
                     }
                     //reportRound(cs.getSpecial(), special, i, j);
                 }
@@ -389,10 +409,12 @@ public class Controller {
             }
             if (i == millisecondsToParse - 1) {
                 String slay = "[" + simple.format(result) + "] " + getCleanName(mob) + " has been slain by " + playerName + "!";
-                fh.writeToFile(fileToWriteTo, slay);
+                if (writeToFile) {
+                    fh.writeToFile(fileToWriteTo, slay);
+                }
+                sd.printSummary(cs.getPrimary(), cs.getSecondary(), cs.getRanged(), getCleanName(mob), cs.getSpecial(), i + 1);
             }
         }
-
     }
 
     /**
@@ -402,45 +424,98 @@ public class Controller {
      * @param mob the target mob
      * @param timestamp start time plus simulated parse time
      */
-    private static void primarySwing(FileHandling fh, CombatRound crMH, String mob, String timestamp) {
+    private static void primarySwing(FileHandling fh, CombatRound crMH, String mob, String timestamp, int attackNum) {
+        switch (attackNum) {
+            case 1:
+                sd.primarySwingCounter++;
+                break;
+            case 2:
+                sd.primaryDoubleCounter++;
+                break;
+            case 3:
+                sd.primaryTripleCounter++;
+                break;
+            case 4:
+                sd.primaryQuadCounter++;
+                break;
+            case 5:
+                sd.primaryQuintCounter++;
+                break;
+        }
+
         primaryDamage = crMH.attack(cs.getPrimary(), "primary", cs.getOffensePrimary());
         String pd = "";
         if (fullCombatTextToFile) {
             if (primaryDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.primaryCritCounter++;
+                    sd.primaryCritDamage += primaryDamage;
+                    if (primaryDamage > sd.primaryMaximumCrit)
+                        sd.primaryMaximumCrit = primaryDamage;
+                    if (primaryDamage < sd.primaryMinimumCrit)
+                        sd.primaryMinimumCrit = primaryDamage;
+
                     if (CombatRound.isCrippling()) {
                         pd += "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + primaryDamage + ")\r\n";
                     } else {
                         pd += "[" + timestamp + "] " + playerName + " scores a critical hit! (" + primaryDamage + ")\r\n";
                     }
                 } else if (CombatRound.isSlayUndead()) {
+                    sd.primaryCritCounter++;
+                    sd.primaryCritDamage += primaryDamage;
+                    if (primaryDamage > sd.primaryMaximumCrit)
+                        sd.primaryMaximumCrit = primaryDamage;
+                    if (primaryDamage < sd.primaryMinimumCrit)
+                        sd.primaryMinimumCrit = primaryDamage;
+
                     pd += "[" + timestamp + "] " + playerName + String_ID.discStartFlavorText(1007) + " (" + primaryDamage + ")\r\n";
+                } else {
+                    sd.primaryDamage += primaryDamage;
+                    if (primaryDamage > sd.primaryMaximumHit)
+                        sd.primaryMaximumHit = primaryDamage;
+                    if (primaryDamage < sd.primaryMinimumHit)
+                        sd.primaryMinimumHit = primaryDamage;
                 }
                 pd += "[" + timestamp + "] " + "You " + attackType(cs.getPrimary()) + " " + getCleanName(mob) + " for "
                         + primaryDamage + " points of damage.\r\n";
             } else {
-                pd = "[" + timestamp + "] " + "You try to " + attackType(cs.getPrimary()) + " "
+                sd.primaryMissCounter++;
+                pd += "[" + timestamp + "] " + "You try to " + attackType(cs.getPrimary()) + " "
                         + getCleanName(mob) + ", but miss!\r\n";
             }
         } else {
             if (primaryDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.primaryCritCounter++;
+                    sd.primaryCritDamage += primaryDamage;
+                    if (primaryDamage > sd.primaryMaximumCrit)
+                        sd.primaryMaximumCrit = primaryDamage;
+                    if (primaryDamage < sd.primaryMinimumCrit)
+                        sd.primaryMinimumCrit = primaryDamage;
+
                     if (CombatRound.isCrippling()) {
                         pd = "[" + timestamp + "] primary " + primaryDamage + " crippling\r\n";
                     } else {
                         pd = "[" + timestamp + "] primary " + primaryDamage + " critical\r\n";
                     }
                 } else {
+                    sd.primaryDamage += primaryDamage;
+                    if (primaryDamage > sd.primaryMaximumHit)
+                        sd.primaryMaximumHit = primaryDamage;
+                    if (primaryDamage < sd.primaryMinimumHit)
+                        sd.primaryMinimumHit = primaryDamage;
                     pd = "[" + timestamp + "] primary " + primaryDamage + " \r\n";
                 }
             } else {
+                sd.primaryMissCounter++;
                 pd = "[" + timestamp + "] primary miss\r\n";
             }
         }
         if (reportToConsole) {
             System.out.print(pd);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, pd);
         }
-        fh.writeToFile(fileToWriteTo, pd);
     }
 
     /**
@@ -452,12 +527,22 @@ public class Controller {
      */
     private static void primaryProc(FileHandling fh, Weapon primary, String mob, String timestamp) {
         String pd = "";
+        sd.primaryProcCounter++;
         if (fullCombatTextToFile) {
             if (primaryProcDamage > 0 || primaryProcDamage == -1) {
                 if (primaryProcDamage > 0) {
+                    if (primaryProcDamage > sd.primaryMaximumDD)
+                        sd.primaryMaximumDD = primaryProcDamage;
+                    if (primaryProcDamage < sd.primaryMinimumDD)
+                        sd.primaryMinimumDD = primaryProcDamage;
                     if (Weapon.isCritical()) {
+                        sd.primaryProcCritCounter++;
+                        sd.primaryProcCritDamage += primaryProcDamage;
+
                         pd += "[" + timestamp + "] " + playerName + " delivers a critical blast! ("
                                 + primaryProcDamage + ")\r\n";
+                    } else {
+                        sd.primaryProcDD += primaryProcDamage;
                     }
                     pd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
                             + primaryProcDamage + " points of damage.\r\n";
@@ -467,25 +552,38 @@ public class Controller {
                     primaryProcDamage--;
                 }
             } else {
+                sd.primaryProcResistCounter++;
                 pd = "[" + timestamp + "] " + "Your target resisted the " + cs.getPrimary().getProcName() + " spell.\r\n";
             }
         } else {
             if (primaryProcDamage > 0 || primaryProcDamage == -1) {
                 pd = "[" + timestamp + "]" + primary.getProc().getSpellTextOnHit() + "\r\n";
                 if (primaryProcDamage > 0) {
+                    if (primaryProcDamage > sd.primaryMaximumDD)
+                        sd.primaryMaximumDD = primaryProcDamage;
+                    if (primaryProcDamage < sd.primaryMinimumDD)
+                        sd.primaryMinimumDD = primaryProcDamage;
+                    if (Weapon.isCritical()) {
+                        sd.primaryProcCritCounter++;
+                        sd.primaryProcCritDamage += primaryProcDamage;
+                    } else {
+                        sd.primaryProcDD += primaryProcDamage;
+                    }
                     pd += "[" + timestamp + "] non-melee " + primaryProcDamage + "\r\n";
                 }
                 if (primaryProcDamage == -1) {
                     primaryProcDamage--;
                 }
             } else {
+                sd.primaryProcResistCounter++;
                 pd = "[" + timestamp + "] resist\r\n";
             }
         }
         if (reportToConsole) {
             System.out.print(pd);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, pd);
         }
-        fh.writeToFile(fileToWriteTo, pd);
     }
 
     /**
@@ -498,6 +596,7 @@ public class Controller {
     private static void primaryDot(FileHandling fh, String mob, String procName, String timestamp) {
         primaryDotTics--;
         String pdt;
+        sd.primaryProcDot += primaryDotDamage;
         if (fullCombatTextToFile) {
             pdt = "[" + timestamp + "] " + getCleanName(mob) + " has taken "
                     + primaryDotDamage + " from your " + procName + ".\r\n";
@@ -512,8 +611,9 @@ public class Controller {
         }
         if (reportToConsole) {
             System.out.print(pdt);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, pdt);
         }
-        fh.writeToFile(fileToWriteTo, pdt);
     }
 
     /**
@@ -522,43 +622,79 @@ public class Controller {
      * @param crOH offhand weapon object
      * @param mob the target mob
      */
-    private static void secondarySwing(FileHandling fh, CombatRound crOH, String mob, String timestamp) {
+    private static void secondarySwing(FileHandling fh, CombatRound crOH, String mob, String timestamp, int attackNum) {
+        switch (attackNum) {
+            case 1:
+                sd.secondarySwingCounter++;
+                break;
+            case 2:
+                sd.secondaryDoubleCounter++;
+                break;
+        }
         secondaryDamage = crOH.attack(cs.getSecondary(), "secondary", cs.getOffenseSecondary());
-        String sd = "";
+        String scd = "";
         if (fullCombatTextToFile) {
             if (secondaryDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.secondaryCritCounter++;
+                    sd.secondaryCritDamage += secondaryDamage;
+                    if (secondaryDamage > sd.secondaryMaximumCrit)
+                        sd.secondaryMaximumCrit = secondaryDamage;
+                    if (secondaryDamage < sd.secondaryMinimumCrit)
+                        sd.secondaryMinimumCrit = secondaryDamage;
+
                     if (CombatRound.isCrippling()) {
-                        sd = "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + secondaryDamage + ")\r\n";
+                        scd = "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + secondaryDamage + ")\r\n";
                     } else {
-                        sd = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + secondaryDamage + ")\r\n";
+                        scd = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + secondaryDamage + ")\r\n";
                     }
+                } else {
+                    sd.secondaryDamage += secondaryDamage;
+                    if (secondaryDamage > sd.secondaryMaximumHit)
+                        sd.secondaryMaximumHit = secondaryDamage;
+                    if (secondaryDamage < sd.secondaryMinimumHit)
+                        sd.secondaryMinimumHit = secondaryDamage;
                 }
-                sd += "[" + timestamp + "] " + "You " + attackType(cs.getSecondary()) + " " + getCleanName(mob) + " for "
+                scd += "[" + timestamp + "] " + "You " + attackType(cs.getSecondary()) + " " + getCleanName(mob) + " for "
                         + secondaryDamage + " points of damage.\r\n";
             } else {
-                sd = "[" + timestamp + "] " + "You try to " + attackType(cs.getSecondary()) + " "
+                sd.secondaryMissCounter++;
+                scd = "[" + timestamp + "] " + "You try to " + attackType(cs.getSecondary()) + " "
                         + getCleanName(mob) + ", but miss!\r\n";
             }
         } else {
             if (secondaryDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.secondaryCritCounter++;
+                    sd.secondaryCritDamage += secondaryDamage;
+                    if (secondaryDamage > sd.secondaryMaximumCrit)
+                        sd.secondaryMaximumCrit = secondaryDamage;
+                    if (secondaryDamage < sd.secondaryMinimumCrit)
+                        sd.secondaryMinimumCrit = secondaryDamage;
+
                     if (CombatRound.isCrippling()) {
-                        sd = "[" + timestamp + "] secondary " + secondaryDamage + " crippling\r\n";
+                        scd = "[" + timestamp + "] secondary " + secondaryDamage + " crippling\r\n";
                     } else {
-                        sd = "[" + timestamp + "] secondary " + secondaryDamage + " critical\r\n";
+                        scd = "[" + timestamp + "] secondary " + secondaryDamage + " critical\r\n";
                     }
                 } else {
-                    sd = "[" + timestamp + "] secondary " + secondaryDamage + " \r\n";
+                    sd.secondaryDamage += secondaryDamage;
+                    if (secondaryDamage > sd.secondaryMaximumHit)
+                        sd.secondaryMaximumHit = secondaryDamage;
+                    if (secondaryDamage < sd.secondaryMinimumHit)
+                        sd.secondaryMinimumHit = secondaryDamage;
                 }
+                scd += "[" + timestamp + "] secondary " + secondaryDamage + " \r\n";
             } else {
-                sd = "[" + timestamp + "] secondary miss\r\n";
+                sd.secondaryMissCounter++;
+                scd = "[" + timestamp + "] secondary miss\r\n";
             }
         }
         if (reportToConsole) {
-            System.out.print(sd);
+            System.out.print(scd);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, scd);
         }
-        fh.writeToFile(fileToWriteTo, sd);
     }
 
     /**
@@ -569,41 +705,64 @@ public class Controller {
      * @param timestamp start time plus simulated parse time
      */
     private static void secondaryProc(FileHandling fh, Weapon secondary, String mob, String timestamp) {
-        String sd = "";
+        String scd = "";
+        sd.primaryProcCounter++;
         if (fullCombatTextToFile) {
             if (secondaryProcDamage > 0 || secondaryProcDamage == -1) {
                 if (secondaryProcDamage > 0 ) {
+                    if (secondaryProcDamage > sd.secondaryMaximumDD)
+                        sd.secondaryMaximumDD = secondaryProcDamage;
+                    if (secondaryProcDamage < sd.secondaryMinimumDD)
+                        sd.secondaryMinimumDD = secondaryProcDamage;
                     if (Weapon.isCritical()) {
-                        sd += "[" + timestamp + "] " + playerName + " delivers a critical blast! ("
+                        sd.secondaryProcCritCounter++;
+                        sd.secondaryProcCritDamage += secondaryProcDamage;
+                        scd += "[" + timestamp + "] " + playerName + " delivers a critical blast! ("
                                 + secondaryProcDamage + ")\r\n";
+                    } else {
+                        sd.primaryProcDD += primaryProcDamage;
                     }
-                    sd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
+                    scd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
                             + secondaryProcDamage + " points of damage.\r\n";
                 }
-                sd += "[" + timestamp + "] " + getCleanName(mob) + secondary.getProc().getSpellTextOnHit() + "\r\n";
+                scd += "[" + timestamp + "] " + getCleanName(mob) + secondary.getProc().getSpellTextOnHit() + "\r\n";
                 if (secondaryProcDamage == -1) {
                     secondaryProcDamage--;
                 }
             } else {
-                sd = "[" + timestamp + "] " + "Your target resisted the " + cs.getSecondary().getProcName() + " spell.\r\n";
+                sd.secondaryProcResistCounter++;
+                scd = "[" + timestamp + "] " + "Your target resisted the " + cs.getSecondary().getProcName() + " spell.\r\n";
             }
         } else {
             if (secondaryProcDamage > 0 || secondaryProcDamage == -1) {
-                sd = "[" + timestamp + "]" + secondary.getProc().getSpellTextOnHit() + "\r\n";
-                if (secondaryProcDamage > 0) {
-                    sd += "[" + timestamp + "] non-melee " + secondaryProcDamage + "\r\n";
-                }
-                if (secondaryProcDamage == -1) {
-                    secondaryProcDamage--;
+                if (secondaryProcDamage > sd.secondaryMaximumDD)
+                    sd.secondaryMaximumDD = secondaryProcDamage;
+                if (secondaryProcDamage < sd.secondaryMinimumDD)
+                    sd.secondaryMinimumDD = secondaryProcDamage;
+
+                if (Weapon.isCritical()) {
+                    sd.secondaryProcCritCounter++;
+                    sd.secondaryProcCritDamage += secondaryProcDamage;
+                    scd = "[" + timestamp + "]" + secondary.getProc().getSpellTextOnHit() + "\r\n";
+                } else {
+                    if (secondaryProcDamage > 0) {
+                        sd.secondaryProcDD += secondaryProcDamage;
+                        scd += "[" + timestamp + "] non-melee " + secondaryProcDamage + "\r\n";
+                    }
+                    if (secondaryProcDamage == -1) {
+                        secondaryProcDamage--;
+                    }
                 }
             } else {
-                sd = "[" + timestamp + "] resist\r\n";
+                sd.secondaryProcResistCounter++;
+                scd = "[" + timestamp + "] resist\r\n";
             }
         }
         if (reportToConsole) {
-            System.out.print(sd);
+            System.out.print(scd);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, scd);
         }
-        fh.writeToFile(fileToWriteTo, sd);
     }
 
     /**
@@ -616,7 +775,7 @@ public class Controller {
     private static void secondaryDot(FileHandling fh, String mob, String procName, String timestamp) {
         secondaryDotTics--;
         String sdt = "";
-
+        sd.secondaryProcDot += secondaryDotDamage;
         if (fullCombatTextToFile) {
             sdt = "[" + timestamp + "] " + getCleanName(mob) + " has taken "
                     + secondaryDotDamage + " from your " + procName + ".\r\n";
@@ -631,8 +790,9 @@ public class Controller {
         }
         if (reportToConsole) {
             System.out.print(sdt);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, sdt);
         }
-        fh.writeToFile(fileToWriteTo, sdt);
     }
 
     /**
@@ -641,17 +801,39 @@ public class Controller {
      * @param crSp special attack object
      * @param mob the target mob
      */
-    private static void specialAttack(FileHandling fh, CombatRound crSp, String mob, String timestamp) {
+    private static void specialAttack(FileHandling fh, CombatRound crSp, String mob, String timestamp, int attackNum) {
+        switch (attackNum) {
+            case 1:
+                sd.specialSwingCounter++;
+                break;
+            case 2:
+                sd.specialDoubleCounter++;
+                break;
+        }
+
         specialDamage = crSp.attack(cs.getSpecialAttack(), cs.getSpecial(), cs.getOffenseSpecial(), SpecialAttack.getMinDamage());
         String spa = "";
         if (fullCombatTextToFile) {
             if (specialDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.specialCritCounter++;
+                    sd.specialCritDamage += specialDamage;
+                    if (specialDamage > sd.specialMaximumCrit)
+                        sd.specialMaximumCrit = specialDamage;
+                    if (specialDamage < sd.specialMinimumCrit)
+                        sd.specialMinimumCrit = specialDamage;
+
                     if (CombatRound.isCrippling()) {
                         spa = "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + specialDamage + ")\r\n";
                     } else {
                         spa = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + specialDamage + ")\r\n";
                     }
+                } else {
+                    sd.specialDamage += specialDamage;
+                    if (specialDamage > sd.specialMaximumHit)
+                        sd.specialMaximumHit = specialDamage;
+                    if (specialDamage < sd.specialMinimumHit)
+                        sd.specialMinimumHit = specialDamage;
                 }
                 spa += "[" + timestamp + "] " + "You ";
                 if (cs.getSpecial().equals("FlyingKick"))
@@ -660,6 +842,7 @@ public class Controller {
                     spa += cs.getSpecial().toLowerCase();
                 spa += " " + getCleanName(mob) + " for " + specialDamage + " points of damage.\r\n";
             } else {
+                sd.specialMissCounter++;
                 spa = "[" + timestamp + "] " + "You try to ";
                 if (cs.getSpecial().equals("FlyingKick"))
                     spa += "kick";
@@ -670,22 +853,36 @@ public class Controller {
         } else {
             if (specialDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.specialCritCounter++;
+                    sd.specialCritDamage += specialDamage;
+                    if (specialDamage > sd.specialMaximumCrit)
+                        sd.specialMaximumCrit = specialDamage;
+                    if (specialDamage < sd.specialMinimumCrit)
+                        sd.specialMinimumCrit = specialDamage;
+
                     if (CombatRound.isCrippling()) {
                         spa = "[" + timestamp + "] " + cs.getSpecial().toLowerCase() + " " + specialDamage + " crippling\r\n";
                     } else {
                         spa = "[" + timestamp + "] " + cs.getSpecial().toLowerCase() + " " + specialDamage + " critical\r\n";
                     }
                 } else {
+                    sd.specialDamage += specialDamage;
+                    if (specialDamage > sd.specialMaximumHit)
+                        sd.specialMaximumHit = specialDamage;
+                    if (specialDamage < sd.specialMinimumHit)
+                        sd.specialMinimumHit = specialDamage;
                     spa = "[" + timestamp + "] " + cs.getSpecial().toLowerCase() + " " + specialDamage + " \r\n";
                 }
             } else {
+                sd.specialMissCounter++;
                 spa = "[" + timestamp + "] " + cs.getSpecial().toLowerCase() + " miss\r\n";
             }
         }
         if (reportToConsole) {
             System.out.print(spa);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, spa);
         }
-        fh.writeToFile(fileToWriteTo, spa);
     }
 
     /**
@@ -696,42 +893,69 @@ public class Controller {
      */
     private static void rangedAttack(FileHandling fh, CombatRound crRng, String mob, String timestamp) {
         String rangedType = cs.getRanged().getWeaponType();
-
+        sd.rangedSwingCounter++;
         rangedDamage = crRng.attack(cs.getRanged(), rangedType, cs.getOffenseRanged());
         String ra;
         if (fullCombatTextToFile) {
             if (rangedDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.rangedCritCounter++;
+                    sd.rangedCritDamage += rangedDamage;
+                    if (rangedDamage > sd.rangedMaximumCrit)
+                        sd.rangedMaximumCrit = rangedDamage;
+                    if (rangedDamage < sd.rangedMinimumCrit)
+                        sd.rangedMinimumCrit = rangedDamage;
+
                     if (CombatRound.isCrippling()) {
-                    ra = "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + rangedDamage + ")\r\n";
+                        ra = "[" + timestamp + "] " + playerName + " lands a Crippling Blow! (" + rangedDamage + ")\r\n";
                     } else {
-                    ra = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + rangedDamage + ")\r\n";
+                        ra = "[" + timestamp + "] " + playerName + " scores a critical hit! (" + rangedDamage + ")\r\n";
                     }
                 } else {
+                    sd.rangedDamage += rangedDamage;
+                    if (rangedDamage > sd.rangedMaximumHit)
+                        sd.rangedMaximumHit = rangedDamage;
+                    if (rangedDamage < sd.rangedMinimumHit)
+                        sd.rangedMinimumHit = rangedDamage;
                     ra = "[" + timestamp + "] " + "You " + attackType(cs.getRanged()) + " " + getCleanName(mob) + " for " + rangedDamage + " points of damage.\r\n";
                 }
             } else {
+                sd.rangedMissCounter++;
                 ra = "[" + timestamp + "] " + "You try to " + attackType(cs.getRanged()) + " " + getCleanName(mob) + ", but miss!\r\n";
             }
         } else {
             if (rangedDamage != 0) {
                 if (CombatRound.isCritHit()) {
+                    sd.rangedCritCounter++;
+                    sd.rangedCritDamage += rangedDamage;
+                    if (rangedDamage > sd.rangedMaximumCrit)
+                        sd.rangedMaximumCrit = rangedDamage;
+                    if (rangedDamage < sd.rangedMinimumCrit)
+                        sd.rangedMinimumCrit = rangedDamage;
+
                     if (CombatRound.isCrippling()) {
                         ra = "[" + timestamp + "] ranged " + rangedDamage + " crippling\r\n";
                     } else {
                         ra = "[" + timestamp + "] ranged " + rangedDamage + " critical\r\n";
                     }
                 } else {
+                    sd.rangedDamage += rangedDamage;
+                    if (rangedDamage > sd.rangedMaximumHit)
+                        sd.rangedMaximumHit = rangedDamage;
+                    if (rangedDamage < sd.rangedMinimumHit)
+                        sd.rangedMinimumHit = rangedDamage;
                     ra = "[" + timestamp + "] ranged " + rangedDamage + " \r\n";
                 }
             } else {
+                sd.rangedMissCounter++;
                 ra = "[" + timestamp + "] ranged miss\r\n";
             }
         }
         if (reportToConsole) {
             System.out.print(ra);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, ra);
         }
-        fh.writeToFile(fileToWriteTo, ra);
     }
     /**
      * Outputs ranged proc damage if it is greater than 0 and a DD
@@ -742,25 +966,45 @@ public class Controller {
      */
     private static void rangedProc(FileHandling fh, Weapon ranged, String mob, String timestamp) {
         String rd = "";
+        sd.rangedProcCounter++;
         if (fullCombatTextToFile) {
             if (rangedProcDamage > 0 || rangedDamage == -1) {
                 if (rangedProcDamage > 0) {
+                    if (rangedProcDamage > sd.rangedMaximumDD)
+                        sd.rangedMaximumDD = rangedProcDamage;
+                    if (rangedProcDamage < sd.rangedMinimumDD)
+                        sd.rangedMinimumDD = rangedProcDamage;
                     if (Weapon.isCritical()) {
+                        sd.rangedProcCritCounter++;
+                        sd.rangedProcCritDamage += rangedProcDamage;
                         rd += "[" + timestamp + "] " + playerName + " delivers a critical blast! ("
                                 + rangedProcDamage + ")\r\n";
+                    } else {
+                        sd.rangedProcDD += rangedProcDamage;
                     }
-                        rd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
-                            + rangedProcDamage + " points of damage.\r\n";
+                    rd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
+                        + rangedProcDamage + " points of damage.\r\n";
                 }
                 rd += "[" + timestamp + "] " + getCleanName(mob) + ranged.getProc().getSpellTextOnHit() + "\r\n";
                 if (rangedProcDamage == -1) {
                     rangedProcDamage--;
                 }
             } else {
+                sd.rangedProcResistCounter++;
                 rd = "[" + timestamp + "] " + "Your target resisted the " + cs.getRanged().getProcName() + " spell.\r\n";
             }
         } else {
             if (rangedProcDamage > 0 || rangedProcDamage == -1) {
+                if (rangedProcDamage > sd.rangedMaximumDD)
+                    sd.rangedMaximumDD = rangedProcDamage;
+                if (rangedProcDamage < sd.rangedMinimumDD)
+                    sd.rangedMinimumDD = rangedProcDamage;
+                if (Weapon.isCritical()) {
+                    sd.rangedProcCritCounter++;
+                    sd.rangedProcCritDamage += rangedProcDamage;
+                } else {
+                    sd.rangedProcDD += rangedProcDamage;
+                }
                 rd = "[" + timestamp + "]" + ranged.getProc().getSpellTextOnHit() + "\r\n";
                 if (rangedProcDamage > 0) {
                     rd += "[" + timestamp + "] non-melee " + rangedProcDamage + "\r\n";
@@ -769,13 +1013,15 @@ public class Controller {
                     rangedProcDamage--;
                 }
             } else {
+                sd.rangedProcResistCounter++;
                 rd = "[" + timestamp + "] resist\r\n";
             }
         }
         if (reportToConsole) {
             System.out.print(rd);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, rd);
         }
-        fh.writeToFile(fileToWriteTo, rd);
     }
 
     /**
@@ -788,7 +1034,7 @@ public class Controller {
     private static void rangedDot(FileHandling fh, String mob, String procName, String timestamp) {
         rangedDotTics--;
         String rdt = "";
-
+        sd.rangedProcDot += rangedDotDamage;
         if (fullCombatTextToFile) {
             rdt = "[" + timestamp + "] " + getCleanName(mob) + " has taken "
                     + rangedDotDamage + " from your " + procName + ".\r\n";
@@ -803,8 +1049,9 @@ public class Controller {
         }
         if (reportToConsole) {
             System.out.print(rdt);
+        } else if (writeToFile) {
+            fh.writeToFile(fileToWriteTo, rdt);
         }
-        fh.writeToFile(fileToWriteTo, rdt);
     }
 
     /**
@@ -837,6 +1084,14 @@ public class Controller {
      */
     public static void setReportToConsole(boolean reportToConsole) {
         Controller.reportToConsole = reportToConsole;
+    }
+
+    /**
+     * Setter method to enable fully parsed output
+     * @param b true if summarized output is desired
+     */
+    private void setSummarizedOutput(boolean b) {
+        summarizedOutput = b;
     }
 
     /**
@@ -1132,7 +1387,6 @@ public class Controller {
     private void setWornAttack(int attack) {
         wornAttack = attack;
     }
-
 
     /**
      * Setter method to set weapons and special attack, none means unequipped or no special attack
@@ -1444,6 +1698,14 @@ public class Controller {
      */
     public void setFileToWriteTo(String fileToWriteTo) {
         this.fileToWriteTo = fileToWriteTo;
+    }
+
+    /**
+     * Setter method that enables file writing
+     * @param b true if write to file
+     */
+    private void setWriteToFile(boolean b) {
+        writeToFile = b;
     }
 
     /**
