@@ -102,16 +102,18 @@ public class SummarizedDamage {
             System.out.println(primary.getWeaponName() + " total misses: " + primaryMissCounter);
             System.out.println(primary.getWeaponName() + " min hit: " + primaryMinimumHit);
             System.out.println(primary.getWeaponName() + " max hit: " + primaryMaximumHit);
-            if (primaryCritCounter > 0) {
+            if (primaryCritCounter> 0) {
                 System.out.printf("%s crit percent: %2.4f%%\n", primary.getWeaponName(),  ((double)primaryCritCounter
-                        / (primarySwingCounter + primaryDoubleCounter + primaryTripleCounter
-                        + primaryQuadCounter + primaryQuintCounter))*100);
+                        / ((primarySwingCounter + primaryDoubleCounter + primaryTripleCounter
+                        + primaryQuadCounter + primaryQuintCounter) - primaryMissCounter))*100);
+                System.out.println(primary.getWeaponName() + " crit hits: " + primaryCritCounter);
                 System.out.println(primary.getWeaponName() + " crit damage: " + primaryCritDamage);
                 System.out.println(primary.getWeaponName() + " min crit: " + primaryMinimumCrit);
                 System.out.println(primary.getWeaponName() + " max crit: " + primaryMaximumCrit);
             }
             if (primaryProcCounter > 0 && ((primaryProcDD > 0) || (primaryProcDot > 0))) {
-                System.out.printf("%s proc dps: %2.2f\n", getCleanName(primary.getProcName()), ((double) (primaryProcDD + primaryProcCritDamage + primaryProcDot) / (time / 1000)));
+                System.out.printf("%s proc dps: %2.2f\n", getCleanName(primary.getProcName()),
+                        ((double) (primaryProcDD + primaryProcCritDamage + primaryProcDot) / (time / 1000)));
                 System.out.println(getCleanName(primary.getProcName()) + " procs: " + primaryProcCounter);
                 System.out.println(getCleanName(primary.getProcName()) + " resists: " + primaryProcResistCounter);
             }
@@ -143,7 +145,9 @@ public class SummarizedDamage {
             System.out.println(secondary.getWeaponName() + " max hit: " + secondaryMaximumHit);
             if (secondaryCritCounter > 0) {
                 System.out.printf("%s crit percent: %2.4f%%\n", secondary.getWeaponName(),
-                         ((double)secondaryCritCounter / (secondarySwingCounter + secondaryDoubleCounter))*100);
+                         ((double)secondaryCritCounter / ((secondarySwingCounter + secondaryDoubleCounter)
+                                 - secondaryMissCounter))*100);
+                System.out.println(secondary.getWeaponName() + " crit hits: " + secondaryCritCounter);
                 System.out.println(secondary.getWeaponName() + " crit damage: " + secondaryCritDamage);
                 System.out.println(secondary.getWeaponName() + " min crit: " + secondaryMinimumCrit);
                 System.out.println(secondary.getWeaponName() + " max crit: " + secondaryMaximumCrit);
@@ -176,7 +180,9 @@ public class SummarizedDamage {
             System.out.println(ranged.getWeaponName() + " min hit: " + rangedMinimumHit);
             System.out.println(ranged.getWeaponName() + " max hit: " + rangedMaximumHit);
             if (rangedCritCounter > 0) {
-                System.out.printf(ranged.getWeaponName() + " crit percent: %2.4f%%\n",  ((double)rangedCritCounter / (rangedSwingCounter))*100);
+                System.out.printf(ranged.getWeaponName() + " crit percent: %2.4f%%\n",
+                        ((double)(rangedCritCounter - rangedMissCounter) / (rangedSwingCounter))*100);
+                System.out.println(ranged.getWeaponName() + " crit hits: " + rangedCritCounter);
                 System.out.println(ranged.getWeaponName() + " crit damage: " + rangedCritDamage);
                 System.out.println(ranged.getWeaponName() + " min crit: " + rangedMinimumCrit);
                 System.out.println(ranged.getWeaponName() + " max crit: " + rangedMaximumCrit);
@@ -210,7 +216,8 @@ public class SummarizedDamage {
             System.out.println(special + " min hit: " + specialMinimumHit);
             System.out.println(special + " max hit: " + specialMaximumHit);
             if (specialCritCounter > 0) {
-                System.out.printf(special + " crit percent: %2.4f%%\n", ((double)specialCritCounter / (specialSwingCounter))*100);
+                System.out.printf(special + " crit percent: %2.4f%%\n",
+                        ((double)(specialCritCounter) / (specialSwingCounter + specialDoubleCounter - specialMissCounter))*100);
                 System.out.println(special + " crit damage: " + specialCritDamage);
                 System.out.println(special + " min crit: " + specialMinimumCrit);
                 System.out.println(special + " max crit: " + specialMaximumCrit);
