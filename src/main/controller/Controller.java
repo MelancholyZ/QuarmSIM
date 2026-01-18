@@ -706,7 +706,7 @@ public class Controller {
      */
     private static void secondaryProc(FileHandling fh, Weapon secondary, String mob, String timestamp) {
         String scd = "";
-        sd.primaryProcCounter++;
+        sd.secondaryProcCounter++;
         if (fullCombatTextToFile) {
             if (secondaryProcDamage > 0 || secondaryProcDamage == -1) {
                 if (secondaryProcDamage > 0 ) {
@@ -720,7 +720,7 @@ public class Controller {
                         scd += "[" + timestamp + "] " + playerName + " delivers a critical blast! ("
                                 + secondaryProcDamage + ")\r\n";
                     } else {
-                        sd.primaryProcDD += primaryProcDamage;
+                        sd.secondaryProcDD += secondaryProcDamage;
                     }
                     scd += "[" + timestamp + "] " + getCleanName(mob) + " was hit by non-melee for "
                             + secondaryProcDamage + " points of damage.\r\n";
