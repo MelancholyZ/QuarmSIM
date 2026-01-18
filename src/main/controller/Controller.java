@@ -73,7 +73,7 @@ public class Controller {
         setBeastlord(true); // Savagery
         setAncientAvatar(true); // +25 attack over avatar
 
-        setClass("Rogue");
+        setClass("Monk");
         setPlayerName("Soandso");
 
         setDiscipline(1059); // Fellstrike = Bestialrage = Innerflame = Duelist = 1059, Trueshot = 1067, Holyforge = 1065
@@ -99,8 +99,8 @@ public class Controller {
         // setCustomResists(i);
 
         //primary, secondary, ranged, specialAttack
-        //setWeaponsAndSpecial("Khalshazar", "Ragebringer", "none", "Backstab");
-        setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Acrylia Handled Broadsword", "none", "Backstab");
+        //setWeaponsAndSpecial("Khalshazar", "Acrylia Handled Broadsword", "none", "Backstab");
+        //setWeaponsAndSpecial("Mrylokar\\'s Dagger of Vengeance", "Acrylia Handled Broadsword", "none", "Backstab");
         //setWeaponsAndSpecial("Yttrium War Hammer", "none", "none", "FlyingKick");
         //setWeaponsAndSpecial("Staff of Transcendence", "none", "none", "none");
         //setWeaponsAndSpecial("Caen\\'s Bo Staff of Fury", "none", "none", "none");
@@ -122,7 +122,7 @@ public class Controller {
         //setWeaponsAndSpecial("Salindrite Dagger", "Baton of Flame", "none", "Kick");
         //setWeaponsAndSpecial("none", "none", "Primal Velium Reinforced Bow", "none");
         //setWeaponsAndSpecial("Emaciated Maul of the Overseer", "none", "none", "Kick");
-        //setWeaponsAndSpecial("Baton of Flame", "Salindrite Dagger", "none", "Kick");
+        setWeaponsAndSpecial("Fangs of Vyzh`dra", "Glowing Mithril Ulak", "none", "FlyingKick");
 
         //arrowDamage, arrowElementalDamage, arrowElementalType
         //Blessed Champion Arrows
@@ -222,8 +222,8 @@ public class Controller {
      * Vulak 1000 AC
      */
     public void setMobListToParse() {
-        //mobList = new String[] {"Lord_Inquisitor_Seru"};
-        mobList = new String[] {"The_Avatar_of_War"};
+        mobList = new String[] {"Lord_Inquisitor_Seru"};
+        //mobList = new String[] {"The_Avatar_of_War"};
         //mobList = new String[] {"Gozzrem"};
         //mobList = new String[] {"Ikatiar_the_Venom"};
         //mobList = new String[] {"Mistress_of_Scorn"};
