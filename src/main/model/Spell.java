@@ -111,7 +111,10 @@ public class Spell {
         String tempString, tempString2;
         tempString = spell.substring(Controller.ordinalIndexOf(spell, ",", index) + 1);
         tempString2 = tempString.substring(0, tempString.indexOf(","));
-        return Integer.parseInt(tempString2);
+        if (tempString2.equals("NULL"))
+            return 0;
+        else
+            return Integer.parseInt(tempString2);
     }
 
     /**

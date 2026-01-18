@@ -1167,10 +1167,22 @@ public class CharacterSheet {
      */
     public void setWeaponSkills() {
         setOneHandedBlunt();
-        setTwoHandedSlashing();
-        setOneHandedSlashing();
-        setTwoHandedSlashing();
-        setPiercing();
+
+        if (!getCharacterClass().equals("Cleric") && !getCharacterClass().equals("Monk")
+                && !getCharacterClass().equals("Shaman") && !getCharacterClass().equals("Necromancer")
+                && !getCharacterClass().equals("Wizard") && !getCharacterClass().equals("Magician")
+                && !getCharacterClass().equals("Enchanter") && !getCharacterClass().equals("Beastlord"))
+            setOneHandedSlashing();
+
+        if (!getCharacterClass().equals("Bard") && !getCharacterClass().equals("Rogue"))
+            setTwoHandedBlunt();
+
+        if (getCharacterClass().equals("Warrior") || getCharacterClass().equals("Ranger")
+            || getCharacterClass().equals("ShadowKnight") || getCharacterClass().equals("Paladin"))
+            setTwoHandedSlashing();
+
+        if (!getCharacterClass().equals("Monk") && !getCharacterClass().equals("Cleric") && !getCharacterClass().equals("Druid"))
+            setPiercing();
         setHandToHand();
     }
 
