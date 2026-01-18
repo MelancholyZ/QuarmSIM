@@ -332,16 +332,11 @@ public class CombatRound {
            overCap = (float)(cs.getDexterity() - 255) / 400.0f;
 
         if (cs.getCharacterClass().equals("Warrior") && cs.getLevel() >= 12) {
-            critChance += 0.5f + (float)(Math.min(cs.getDexterity(), 255)) / 90.0f + overCap;
-        }
-        else if (skill.equals("Archery") && cs.getCharacterClass().equals("Ranger") && cs.getLevel() > 16) {
-            critChance += 1.35f + (float)(Math.min(cs.getDexterity(), 255)) / 34.0f + overCap * 2;
-        }
-		if (!cs.getCharacterClass().equals("Warrior") && critChanceMult > 0) {
-            critChance += 0.275f + (float)(Math.min(cs.getDexterity(), 255)) / 150.0f + overCap;
-        }
-        if (Discipline.getActiveDisc() == 1062) { // Mighty Strike discipline = 1062
-            critChance *= 10000;
+            critChance = 0.5f + (float)(Math.min(cs.getDexterity(), 255)) / 90.0f + overCap;
+        } else if (skill.equals("Archery") && cs.getCharacterClass().equals("Ranger") && cs.getLevel() > 16) {
+            critChance = 1.35f + (float)(Math.min(cs.getDexterity(), 255)) / 34.0f + overCap * 2;
+        } else if (!cs.getCharacterClass().equals("Warrior") && critChanceMult > 0) {
+            critChance = 0.275f + (float)(Math.min(cs.getDexterity(), 255)) / 150.0f + overCap;
         }
 
         if (critChanceMult > 0)
@@ -360,11 +355,11 @@ public class CombatRound {
         int deadlyChance = 0;
         int deadlyMod = 0;
 
-        if (skill.equals("Throwing") && cs.getCharacterClass().equals("Rogue") && cs.getSpecialSkillCap() >= 65) {
-            critChance += 25;
-            deadlyChance = 80;
-            deadlyMod = 2;
-        }
+//        if (skill.equals("Throwing") && cs.getCharacterClass().equals("Rogue") && cs.getSpecialSkillCap() >= 65) {
+//            critChance += 25;
+//            deadlyChance = 80;
+//            deadlyMod = 2;
+//        }
 
         if (critChance > 0)
         {
