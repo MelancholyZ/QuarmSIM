@@ -102,7 +102,7 @@ public class SummarizedDamage {
             System.out.println(primary.getWeaponName() + " total misses: " + primaryMissCounter);
             System.out.println(primary.getWeaponName() + " min hit: " + primaryMinimumHit);
             System.out.println(primary.getWeaponName() + " max hit: " + primaryMaximumHit);
-            if (primaryCritCounter> 0) {
+            if (primaryCritCounter > 0) {
                 System.out.printf("%s crit percent: %2.4f%%\n", primary.getWeaponName(),  ((double)primaryCritCounter
                         / ((primarySwingCounter + primaryDoubleCounter + primaryTripleCounter
                         + primaryQuadCounter + primaryQuintCounter) - primaryMissCounter))*100);
