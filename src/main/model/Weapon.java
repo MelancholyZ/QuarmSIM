@@ -343,8 +343,7 @@ public class Weapon {
         //  if (spell_id == 88 && (critChanceAA > 0) && (Controller.getUnholyTouch() > 0))
         //      critical = true;
 
-        if (critical)
-        {
+        if (critical) {
             int mult = 100;
             if (critChanceAA == 1)	// lower ranks do not do double damage
                 mult = 33;

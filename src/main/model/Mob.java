@@ -269,4 +269,12 @@ public class Mob {
     public int getLevel() {
         return level;
     }
+
+    /**
+     * Getter method to get mob name
+     * @return mob name
+     */
+    public String getMobName() {
+        return mobName;
+    }
 }
